@@ -1,0 +1,41 @@
+spring:
+  application:
+    name: playground
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/Playground?createDatabaseIfNotExist=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+    username: root
+    password: 123456
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+
+server:
+  port: 8080
+
+# 可选配置 - 如需完整功能请填写
+aliyun:
+  oss:
+    endpoint: # 如: oss-cn-beijing.aliyuncs.com
+    accessKeyId: # 请填写你的AccessKey ID
+    accessKeySecret: # 请填写你的AccessKey Secret
+    bucketName: # 请填写你的Bucket名称
+
+alipay:
+  app-id: # 请填写支付宝应用ID
+  gateway: # 填写支付宝网关
+  notify-url: # 请填写回调地址
+  sign-type: RSA2
+  charset: UTF-8
+  app-cert-path: classpath:alipay/appPublicCert.crt
+  alipay-cert-path: classpath:alipay/alipayPublicCert.crt
+  alipay-root-cert-path: classpath:alipay/alipayRootCert.crt
+  private-key-path: classpath:alipay/appPrivateKey.txt
+
+logging:
+  level:
+    root: INFO
