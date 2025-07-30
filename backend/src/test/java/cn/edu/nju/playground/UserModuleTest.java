@@ -196,7 +196,7 @@ class UserModuleTest {
     @Order(5)
     @DisplayName("5. 获取当前用户信息测试")
     void testGetCurrentUserInfo() throws Exception {
-        MvcResult result = mockMvc.perform(get("/api/user/info")
+        MvcResult result = mockMvc.perform(get("/api/users/info")
                         .header("Authorization", "Bearer " + authToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(200))
@@ -216,7 +216,7 @@ class UserModuleTest {
     @Order(6)
     @DisplayName("6. 获取用户公开信息测试")
     void testGetUserPublicInfo() throws Exception {
-        MvcResult result = mockMvc.perform(get("/api/user/" + userId + "/info"))
+        MvcResult result = mockMvc.perform(get("/api/users/" + userId + "/info").header("Authorization", "Bearer " + authToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(200))
                 .andExpect(jsonPath("$.data.id").value(userId))
@@ -236,11 +236,11 @@ class UserModuleTest {
     @DisplayName("7. 未授权访问测试")
     void testUnauthorizedAccess() throws Exception {
         // 无token访问
-        mockMvc.perform(get("/api/user/info"))
+        mockMvc.perform(get("/api/users/info"))
                 .andExpect(status().isUnauthorized());
 
         // 错误token访问
-        mockMvc.perform(get("/api/user/info")
+        mockMvc.perform(get("/api/users/info")
                         .header("Authorization", "Bearer invalid-token"))
                 .andExpect(status().isUnauthorized());
 
@@ -258,7 +258,7 @@ class UserModuleTest {
                 "new test image content".getBytes()
         );
 
-        MvcResult result = mockMvc.perform(multipart("/api/user/info")
+        MvcResult result = mockMvc.perform(multipart("/api/users/info")
                         .file(newAvatarFile)
                         .param("username", "updateduser")
                         .param("phone", "13987654321")
@@ -304,7 +304,7 @@ class UserModuleTest {
         userRepository.save(anotherUser);
 
         // 尝试更新为已存在的手机号
-        mockMvc.perform(multipart("/api/user/info")
+        mockMvc.perform(multipart("/api/users/info")
                         .param("phone", "13111111111")
                         .header("Authorization", "Bearer " + authToken)
                         .with(request -> {
@@ -315,7 +315,7 @@ class UserModuleTest {
                 .andExpect(jsonPath("$.message").value("手机号已被注册"));
 
         // 尝试更新为已存在的邮箱
-        mockMvc.perform(multipart("/api/user/info")
+        mockMvc.perform(multipart("/api/users/info")
                         .param("email", "another@example.com")
                         .header("Authorization", "Bearer " + authToken)
                         .with(request -> {
@@ -336,7 +336,7 @@ class UserModuleTest {
         changeRequest.setOldPassword(TEST_PASSWORD);
         changeRequest.setNewPassword("newpassword123");
 
-        mockMvc.perform(put("/api/user/password")
+        mockMvc.perform(put("/api/users/password")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(changeRequest))
                         .header("Authorization", "Bearer " + authToken))
@@ -378,7 +378,7 @@ class UserModuleTest {
         authToken = newToken; // 更新authToken为新token
 
         // 使用新token获取用户信息
-        MvcResult userInfoResult = mockMvc.perform(get("/api/user/info")
+        MvcResult userInfoResult = mockMvc.perform(get("/api/users/info")
                         .header("Authorization", "Bearer " + newToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.username").value("updateduser"))
@@ -404,7 +404,7 @@ class UserModuleTest {
         wrongOldPasswordRequest.setOldPassword("wrongoldpassword");
         wrongOldPasswordRequest.setNewPassword("anothernewpassword");
 
-        mockMvc.perform(put("/api/user/password")
+        mockMvc.perform(put("/api/users/password")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(wrongOldPasswordRequest))
                         .header("Authorization", "Bearer " + authToken))
@@ -460,7 +460,7 @@ class UserModuleTest {
         invalidChangeRequest.setOldPassword("");
         invalidChangeRequest.setNewPassword("123"); // 密码太短
 
-        mockMvc.perform(put("/api/user/password")
+        mockMvc.perform(put("/api/users/password")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(invalidChangeRequest))
                         .header("Authorization", "Bearer " + authToken))
