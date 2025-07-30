@@ -66,7 +66,7 @@ public class UserService {
 
         // 创建用户钱包
         Wallet wallet = Wallet.builder()
-                .userId(user.getId())
+                .user(user)
                 .build();
 
         walletRepository.save(wallet);

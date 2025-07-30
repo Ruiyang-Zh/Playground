@@ -23,8 +23,9 @@ public class Wallet {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
-    private Long userId;
+    @OneToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "userId", nullable = false, unique = true)
+    private User user;
 
     @Column(nullable = false, precision = 12, scale = 2)
     @Builder.Default

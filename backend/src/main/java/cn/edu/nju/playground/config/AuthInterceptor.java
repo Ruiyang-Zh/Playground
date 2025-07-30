@@ -21,9 +21,8 @@ public class AuthInterceptor implements HandlerInterceptor {
     private static final Map<String, String> WHITELIST = Map.of(
         "/api/auth/login", "POST",
         "/api/auth/register", "POST",
-        "/api/activities/search", "GET",
-        "/api/activities/list", "GET",
-        "/api/activities/*/detail", "GET",
+        "/api/activities", "GET",
+        "/api/activities/\\d+", "GET",
         "/api/user/\\d+/info", "GET",
         "/doc.html", "GET",
         "/swagger-ui/**", "GET",

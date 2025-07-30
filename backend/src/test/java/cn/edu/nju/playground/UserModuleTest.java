@@ -5,7 +5,6 @@ import cn.edu.nju.playground.model.po.User;
 import cn.edu.nju.playground.model.po.Wallet;
 import cn.edu.nju.playground.repository.UserRepository;
 import cn.edu.nju.playground.repository.WalletRepository;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;

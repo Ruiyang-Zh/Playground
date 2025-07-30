@@ -1,8 +1,8 @@
 package cn.edu.nju.playground.service;
 
 import cn.edu.nju.playground.enums.UserActivityType;
-import cn.edu.nju.playground.event.activity.ActivityFeeChargeEvent;
-import cn.edu.nju.playground.event.activity.ActivityFeeRefundEvent;
+import cn.edu.nju.playground.event.activity.RegistrationEvent;
+import cn.edu.nju.playground.event.activity.UnregistrationEvent;
 import cn.edu.nju.playground.exception.PlaygroundException;
 import cn.edu.nju.playground.model.dto.activity.*;
 import cn.edu.nju.playground.model.po.Activity;
@@ -37,7 +37,6 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
 @Slf4j
 public class ActivityService {
 
@@ -301,10 +300,8 @@ public class ActivityService {
             // 退还费用
             if (registration.getFeeAmount().compareTo(BigDecimal.ZERO) > 0) {
                 eventPublisher.publishEvent(
-                        ActivityFeeRefundEvent.builder()
-                                .user(registration.getUser())
-                                .amount(registration.getFeeAmount())
-                                .activity(activity)
+                        UnregistrationEvent.builder()
+                                .registration(registration)
                                 .description("活动取消退费")
                                 .build()
                 );
@@ -360,16 +357,14 @@ public class ActivityService {
         // 收费处理
         if (activity.getFee().compareTo(BigDecimal.ZERO) > 0) {
             eventPublisher.publishEvent(
-                    ActivityFeeChargeEvent.builder()
-                            .user(currentUser)
-                            .amount(activity.getFee())
-                            .activity(activity)
+                    RegistrationEvent.builder()
+                            .registration(registration)
                             .description("报名活动：" + activity.getTitle())
                             .build()
             );
         } else {
             // 如果活动免费，直接确认报名
-            confirmRegistrationInternal(registration);
+            confirmRegistration(registration);
         }
 
         log.info("用户发起报名，活动ID: {}, 用户ID: {}, 报名ID: {}",
@@ -380,17 +375,7 @@ public class ActivityService {
      * 确认报名（回调处理函数）
      */
     @Transactional
-    public void confirmRegistration(Long registrationId) {
-        Registration registration = registrationRepository.findById(registrationId)
-                .orElseThrow(() -> PlaygroundException.operationFailed("报名记录不存在"));
-
-        confirmRegistrationInternal(registration);
-    }
-
-    /**
-     * 内部确认报名方法
-     */
-    private void confirmRegistrationInternal(Registration registration) {
+    public void confirmRegistration(Registration registration) {
         // 检查状态
         if (registration.getStatus() != RegistrationStatus.PENDING) {
             log.warn("尝试确认非待处理状态的报名，报名ID: {}, 当前状态: {}",
@@ -410,10 +395,8 @@ public class ActivityService {
 
             if (registration.getFeeAmount().compareTo(BigDecimal.ZERO) > 0) {
                 eventPublisher.publishEvent(
-                        ActivityFeeRefundEvent.builder()
-                                .user(registration.getUser())
-                                .amount(registration.getFeeAmount())
-                                .activity(activity)
+                        UnregistrationEvent.builder()
+                                .registration(registration)
                                 .description("活动满员退费：" + activity.getTitle())
                                 .build()
                 );
@@ -445,10 +428,7 @@ public class ActivityService {
      * 取消报名（扣费失败后的回调）
      */
     @Transactional
-    public void cancelRegistration(Long registrationId, String reason) {
-        Registration registration = registrationRepository.findById(registrationId)
-                .orElseThrow(() -> PlaygroundException.operationFailed("报名记录不存在"));
-
+    public void cancelRegistration(Registration registration, String reason) {
         if (registration.getStatus() != RegistrationStatus.PENDING) {
             log.warn("尝试取消非待处理状态的报名，报名ID: {}, 当前状态: {}",
                     registration.getId(), registration.getStatus());
@@ -493,10 +473,8 @@ public class ActivityService {
         // 退还费用
         if (registration.getFeeAmount().compareTo(BigDecimal.ZERO) > 0) {
             eventPublisher.publishEvent(
-                    ActivityFeeRefundEvent.builder()
-                            .user(currentUser)
-                            .amount(registration.getFeeAmount())
-                            .activity(activity)
+                    UnregistrationEvent.builder()
+                            .registration(registration)
                             .description("退出活动退费：" + activity.getTitle())
                             .build()
             );
@@ -786,10 +764,17 @@ public class ActivityService {
     }
 
     private boolean isUserRegistered(Activity activity, User user) {
+        if (activity == null || user == null) {
+            return false;
+        }
         return registrationRepository.existsByActivity_IdAndUser_Id(activity.getId(), user.getId());
     }
 
     private boolean canUserRegister(Activity activity, User user) {
+        if (activity == null || user == null) {
+            return false;
+        }
+
         // 检查活动状态
         if (activity.getStatus() != ActivityStatus.RECRUITING) {
             return false;
@@ -805,6 +790,10 @@ public class ActivityService {
     }
 
     private boolean canUpdateActivity(Activity activity, User user) {
+        if (activity == null || user == null) {
+            return false;
+        }
+
         if (!activity.getCreator().getId().equals(user.getId())) {
             return false;
         }
@@ -813,6 +802,10 @@ public class ActivityService {
     }
 
     private boolean canCancelActivity(Activity activity, User user) {
+        if (activity == null || user == null) {
+            return false;
+        }
+
         if (!activity.getCreator().getId().equals(user.getId())) {
             return false;
         }

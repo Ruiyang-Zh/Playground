@@ -11,7 +11,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 
 @Tag(name = "用户服务")
 @RestController
-@RequestMapping("/api/user")
+@RequestMapping("/api/users")
 @RequiredArgsConstructor
 public class UserController {
 
