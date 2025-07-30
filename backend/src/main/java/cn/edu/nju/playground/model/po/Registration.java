@@ -20,8 +20,7 @@ import java.time.LocalDateTime;
         },
         indexes = {
                 @Index(name = "idx_registration_activity_status", columnList = "activityId, status"),
-                @Index(name = "idx_registration_user", columnList = "userId"),
-                @Index(name = "idx_registration_waitlist", columnList = "activityId, isWaitlist")
+                @Index(name = "idx_registration_user", columnList = "userId")
         }
 )
 public class Registration {
@@ -45,10 +44,6 @@ public class Registration {
     @Column(nullable = false, precision = 10, scale = 2)
     @Builder.Default
     private BigDecimal feeAmount = BigDecimal.ZERO;
-
-    @Column(nullable = false)
-    @Builder.Default
-    private Boolean isWaitlist = false;
 
     @CreationTimestamp
     @Column(nullable = false)

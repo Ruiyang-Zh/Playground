@@ -25,7 +25,6 @@ public class UserRegisterRequest {
     private String username;
 
     private MultipartFile avatar;
-    private String contactInfo;
     private List<SportsType> sportsPreference;
     private String description;
 }

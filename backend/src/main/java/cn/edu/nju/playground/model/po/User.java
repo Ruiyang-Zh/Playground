@@ -38,10 +38,6 @@ public class User {
     @Column(length = 500)
     private String avatar;
 
-    @Column(columnDefinition = "JSON")
-    @Builder.Default
-    private String contactInfo = "{}"; // Default to empty JSON object
-
     @ElementCollection(targetClass = SportsType.class, fetch = FetchType.EAGER)
     @Enumerated(EnumType.STRING)
     @CollectionTable(name = "user_sports_preference")
@@ -57,12 +53,4 @@ public class User {
     @UpdateTimestamp
     @Column(nullable = false)
     private LocalDateTime updatedAt;
-
-    @PrePersist
-    @PreUpdate
-    private void preprocessContactInfo() {
-        if (this.contactInfo != null && this.contactInfo.trim().isEmpty()) {
-            this.contactInfo = null;
-        }
-    }
 }

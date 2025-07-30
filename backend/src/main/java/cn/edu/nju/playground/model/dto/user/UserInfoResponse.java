@@ -13,7 +13,6 @@ public class UserInfoResponse {
     private String email;
     private String username;
     private String avatar;
-    private String contactInfo;
     private List<SportsType> sportsPreference;
     private String description;
     private String createdAt;
@@ -24,7 +23,6 @@ public class UserInfoResponse {
         this.email = user.getEmail();
         this.username = user.getUsername();
         this.avatar = user.getAvatar();
-        this.contactInfo = user.getContactInfo();
         this.sportsPreference = user.getSportsPreference();
         this.description = user.getDescription();
         this.createdAt = user.getCreatedAt().toString();

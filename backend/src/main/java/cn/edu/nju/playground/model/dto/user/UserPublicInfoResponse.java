@@ -12,7 +12,6 @@ public class UserPublicInfoResponse {
     private Long id;
     private String username;
     private String avatar;
-    private String contactInfo;
     private List<SportsType> sportsPreference;
     private String description;
 
@@ -20,7 +19,6 @@ public class UserPublicInfoResponse {
         this.id = user.getId();
         this.username = user.getUsername();
         this.avatar = user.getAvatar();
-        this.contactInfo = user.getContactInfo();
         this.sportsPreference = user.getSportsPreference();
         this.description = user.getDescription();
     }

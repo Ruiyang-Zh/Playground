@@ -7,6 +7,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import cn.edu.nju.playground.enums.SportsType;
 import cn.edu.nju.playground.enums.ActivityStatus;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -32,6 +33,9 @@ public class Activity {
     @JoinColumn(name = "creatorId", nullable = false)
     @ManyToOne(fetch = FetchType.LAZY)
     private User creator;
+
+    @Column(nullable = false)
+    private String contactInfo;
 
     @Column(nullable = false, length = 200)
     private String title;

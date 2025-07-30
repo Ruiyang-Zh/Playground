@@ -1,8 +1,8 @@
 package cn.edu.nju.playground.enums;
 
 public enum RegistrationStatus {
-    CONFIRMED("确认报名"),
-    WAITLIST("候补中"),
+    PENDING("待处理"),
+    CONFIRMED("已确认"),
     CANCELLED("已取消");
 
     private final String description;

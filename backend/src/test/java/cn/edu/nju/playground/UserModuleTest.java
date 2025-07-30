@@ -55,77 +55,6 @@ class UserModuleTest {
     private static final String TEST_USERNAME = "testuser";
     private static final String TEST_PASSWORD = "password123";
 
-    private void assertJsonEquals(String expected, String actual) {
-        try {
-            String processedActual = actual;
-
-            // 处理多层转义：持续反转义直到不再是转义的字符串
-            while (processedActual.startsWith("\"") && processedActual.endsWith("\"")) {
-                try {
-                    String temp = objectMapper.readValue(processedActual, String.class);
-                    if (temp.equals(processedActual)) {
-                        // 如果反转义后没有变化，说明不是转义字符串，跳出循环
-                        break;
-                    }
-                    processedActual = temp;
-                } catch (Exception e) {
-                    // 反转义失败，跳出循环
-                    break;
-                }
-            }
-
-            JsonNode expectedNode = objectMapper.readTree(expected);
-            JsonNode actualNode = objectMapper.readTree(processedActual);
-            assertEquals(expectedNode, actualNode);
-        } catch (Exception e) {
-            fail("JSON比较失败: " + e.getMessage() + "\n期望: " + expected + "\n实际: " + actual);
-        }
-    }
-
-    /**
-     * 更强大的字符串或JSON比较方法
-     */
-    private void assertStringOrJsonEquals(String expected, String actual) {
-        if (expected == null && actual == null) {
-            return;
-        }
-        if (expected == null || actual == null) {
-            assertEquals(expected, actual);
-            return;
-        }
-
-        // 处理实际值的转义
-        String cleanActual = actual;
-        if (actual.startsWith("\"") && actual.endsWith("\"")) {
-            try {
-                cleanActual = objectMapper.readValue(actual, String.class);
-            } catch (Exception e) {
-                // 转义失败，保持原值
-            }
-        }
-
-        // 判断是否是JSON格式
-        boolean expectedIsJson = (expected.trim().startsWith("{") && expected.trim().endsWith("}")) ||
-                (expected.trim().startsWith("[") && expected.trim().endsWith("]"));
-        boolean actualIsJson = (cleanActual.trim().startsWith("{") && cleanActual.trim().endsWith("}")) ||
-                (cleanActual.trim().startsWith("[") && cleanActual.trim().endsWith("]"));
-
-        if (expectedIsJson && actualIsJson) {
-            // 都是JSON，使用JSON比较
-            try {
-                JsonNode expectedNode = objectMapper.readTree(expected);
-                JsonNode actualNode = objectMapper.readTree(cleanActual);
-                assertEquals(expectedNode, actualNode);
-            } catch (Exception e) {
-                // JSON解析失败，按字符串比较
-                assertEquals(expected, cleanActual);
-            }
-        } else {
-            // 按字符串比较
-            assertEquals(expected, cleanActual);
-        }
-    }
-
     @Test
     @Order(1)
     @DisplayName("1. 用户注册功能测试")
@@ -138,8 +67,6 @@ class UserModuleTest {
                 "test image content".getBytes()
         );
 
-        String testContactInfo = "{\"wechat\":\"testwechat\",\"qq\":\"123456789\"}";
-
         // 执行注册请求
         MvcResult result = mockMvc.perform(multipart("/api/auth/register")
                         .file(avatarFile)
@@ -147,7 +74,6 @@ class UserModuleTest {
                         .param("email", TEST_EMAIL)
                         .param("username", TEST_USERNAME)
                         .param("password", TEST_PASSWORD)
-                        .param("contactInfo", testContactInfo)
                         .param("sportsPreference", "BASKETBALL,RUNNING")
                         .param("description", "我是一个热爱运动的测试用户"))
                 .andExpect(status().isOk())
@@ -166,9 +92,6 @@ class UserModuleTest {
         assertEquals(TEST_USERNAME, user.getUsername());
         assertTrue(passwordEncoder.matches(TEST_PASSWORD, user.getPassword()));
         assertNotNull(user.getAvatar(), "头像应该已上传");
-
-        // 使用JSON比较工具验证contactInfo
-        assertJsonEquals(testContactInfo, user.getContactInfo());
 
         assertEquals("我是一个热爱运动的测试用户", user.getDescription());
 
@@ -287,12 +210,6 @@ class UserModuleTest {
                 .andExpect(jsonPath("$.data.createdAt").exists())
                 .andReturn();
 
-        // 验证响应中的contactInfo
-        String responseBody = result.getResponse().getContentAsString();
-        JsonNode responseJson = objectMapper.readTree(responseBody);
-        String responseContactInfo = responseJson.get("data").get("contactInfo").asText();
-        assertJsonEquals("{\"wechat\":\"testwechat\",\"qq\":\"123456789\"}", responseContactInfo);
-
         System.out.println("✅ 获取当前用户信息测试通过");
     }
 
@@ -306,18 +223,11 @@ class UserModuleTest {
                 .andExpect(jsonPath("$.data.id").value(userId))
                 .andExpect(jsonPath("$.data.username").value(TEST_USERNAME))
                 .andExpect(jsonPath("$.data.avatar").exists())
-                .andExpect(jsonPath("$.data.contactInfo").exists())
                 .andExpect(jsonPath("$.data.description").exists())
                 // 公开信息不包含手机号和邮箱
                 .andExpect(jsonPath("$.data.phone").doesNotExist())
                 .andExpect(jsonPath("$.data.email").doesNotExist())
                 .andReturn();
-
-        // 验证公开信息中的contactInfo
-        String responseBody = result.getResponse().getContentAsString();
-        JsonNode responseJson = objectMapper.readTree(responseBody);
-        String responseContactInfo = responseJson.get("data").get("contactInfo").asText();
-        assertJsonEquals("{\"wechat\":\"testwechat\",\"qq\":\"123456789\"}", responseContactInfo);
 
         System.out.println("✅ 获取用户公开信息测试通过");
     }
@@ -349,14 +259,11 @@ class UserModuleTest {
                 "new test image content".getBytes()
         );
 
-        String updatedContactInfo = "{\"wechat\":\"updatedwechat\",\"qq\":\"987654321\"}";
-
         MvcResult result = mockMvc.perform(multipart("/api/user/info")
                         .file(newAvatarFile)
                         .param("username", "updateduser")
                         .param("phone", "13987654321")
                         .param("email", "updated@example.com")
-                        .param("contactInfo", updatedContactInfo)
                         .param("sportsPreference", "SWIMMING,TENNIS")
                         .param("description", "我是更新后的用户信息")
                         .header("Authorization", "Bearer " + authToken)
@@ -372,21 +279,12 @@ class UserModuleTest {
                 .andExpect(jsonPath("$.data.description").value("我是更新后的用户信息"))
                 .andReturn();
 
-        // 验证响应中的contactInfo
-        String responseBody = result.getResponse().getContentAsString();
-        JsonNode responseJson = objectMapper.readTree(responseBody);
-        String responseContactInfo = responseJson.get("data").get("contactInfo").asText();
-        assertJsonEquals(updatedContactInfo, responseContactInfo);
-
         // 验证数据库中的更新
         User updatedUser = userRepository.findById(userId).orElse(null);
         assertNotNull(updatedUser);
         assertEquals("updateduser", updatedUser.getUsername());
         assertEquals("13987654321", updatedUser.getPhone());
         assertEquals("updated@example.com", updatedUser.getEmail());
-
-        // 使用JSON比较工具验证数据库中的contactInfo
-        assertJsonEquals(updatedContactInfo, updatedUser.getContactInfo());
 
         assertEquals("我是更新后的用户信息", updatedUser.getDescription());
 
@@ -487,12 +385,6 @@ class UserModuleTest {
                 .andExpect(jsonPath("$.data.username").value("updateduser"))
                 .andReturn();
 
-        // 验证用户信息中的contactInfo
-        String userInfoResponseBody = userInfoResult.getResponse().getContentAsString();
-        JsonNode userInfoJson = objectMapper.readTree(userInfoResponseBody);
-        String contactInfo = userInfoJson.get("data").get("contactInfo").asText();
-        assertJsonEquals("{\"wechat\":\"updatedwechat\",\"qq\":\"987654321\"}", contactInfo);
-
         // 旧密码不能登录
         loginRequest.setPassword(TEST_PASSWORD);
         mockMvc.perform(post("/api/auth/login")
@@ -537,9 +429,6 @@ class UserModuleTest {
         assertTrue(passwordEncoder.matches("newpassword123", finalUser.getPassword()));
         assertNotNull(finalUser.getAvatar());
 
-        // 使用JSON比较验证最终的contactInfo
-        assertJsonEquals("{\"wechat\":\"updatedwechat\",\"qq\":\"987654321\"}", finalUser.getContactInfo());
-
         assertEquals("我是更新后的用户信息", finalUser.getDescription());
 
         // 验证钱包仍然存在
@@ -581,90 +470,6 @@ class UserModuleTest {
         System.out.println("✅ 参数验证测试通过");
     }
 
-    @Test
-    @Order(15)
-    @DisplayName("15. JSON格式处理测试")
-    void testJsonHandling() throws Exception {
-        // 测试复杂JSON的contactInfo
-        String complexContactInfo = "{" +
-                "\"wechat\":\"complex_wechat\"," +
-                "\"qq\":\"987654321\"," +
-                "\"phone\":\"13800138000\"," +
-                "\"email\":\"contact@example.com\"," +
-                "\"address\":{\"city\":\"南京\",\"district\":\"栖霞区\"}" +
-                "}";
-
-        MockMultipartFile avatarFile = new MockMultipartFile(
-                "avatar",
-                "test-avatar.jpg",
-                "image/jpeg",
-                "test avatar content".getBytes()
-        );
-
-        MvcResult result = mockMvc.perform(multipart("/api/user/info")
-                        .file(avatarFile)
-                        .param("contactInfo", complexContactInfo)
-                        .param("description", "测试复杂JSON处理")
-                        .header("Authorization", "Bearer " + authToken)
-                        .with(request -> {
-                            request.setMethod("PUT");
-                            return request;
-                        }))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(200))
-                .andReturn();
-
-        // 验证响应中的复杂JSON
-        String responseBody = result.getResponse().getContentAsString();
-        JsonNode responseJson = objectMapper.readTree(responseBody);
-        String responseContactInfo = responseJson.get("data").get("contactInfo").asText();
-        assertJsonEquals(complexContactInfo, responseContactInfo);
-
-        // 验证数据库中的复杂JSON
-        User updatedUser = userRepository.findById(userId).orElse(null);
-        assertNotNull(updatedUser);
-        assertJsonEquals(complexContactInfo, updatedUser.getContactInfo());
-
-        System.out.println("✅ JSON格式处理测试通过");
-    }
-
-    @Test
-    @Order(16)
-    @DisplayName("16. 空值和null值处理测试")
-    void testNullAndEmptyHandling() throws Exception {
-        // 测试空contactInfo
-        MvcResult result1 = mockMvc.perform(multipart("/api/user/info")
-                        .param("contactInfo", "")
-                        .param("description", "测试空值处理")
-                        .header("Authorization", "Bearer " + authToken)
-                        .with(request -> {
-                            request.setMethod("PUT");
-                            return request;
-                        }))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(200))
-                .andReturn();
-
-        // 验证空值处理
-        User userAfterEmpty = userRepository.findById(userId).orElse(null);
-        assertNotNull(userAfterEmpty);
-        // 空字符串应该被处理为null或保持为空字符串，根据业务逻辑决定
-        assertStringOrJsonEquals(null, userAfterEmpty.getContactInfo());
-
-        // 测试null contactInfo（不传递该参数）
-        mockMvc.perform(multipart("/api/user/info")
-                        .param("description", "测试null值处理")
-                        .header("Authorization", "Bearer " + authToken)
-                        .with(request -> {
-                            request.setMethod("PUT");
-                            return request;
-                        }))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(200));
-
-        System.out.println("✅ 空值和null值处理测试通过");
-    }
-
     @AfterAll
     static void printTestSummary() {
         System.out.println("\n" + "=".repeat(60));
@@ -684,8 +489,6 @@ class UserModuleTest {
         System.out.println("  12. ✅ 新密码登录验证");
         System.out.println("  13. ✅ 数据完整性验证");
         System.out.println("  14. ✅ 参数验证");
-        System.out.println("  15. ✅ JSON格式处理");
-        System.out.println("  16. ✅ 空值和null值处理");
         System.out.println("=".repeat(60));
     }
 }

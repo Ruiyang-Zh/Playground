@@ -37,18 +37,19 @@ public class UserService {
             throw PlaygroundException.userAlreadyExists("手机号已被注册");
         }
 
+        String email = (request.getEmail() != null && request.getEmail().isEmpty()) ? null : request.getEmail();
+
         // 检查邮箱是否已存在
-        if (request.getEmail() != null && userRepository.existsByEmail(request.getEmail())) {
+        if (email != null && userRepository.existsByEmail(request.getEmail())) {
             throw PlaygroundException.userAlreadyExists("邮箱已被注册");
         }
 
         // 创建用户
         User user = User.builder()
                 .phone(request.getPhone())
-                .email(request.getEmail())
+                .email(email)
                 .username(request.getUsername())
                 .password(passwordEncoder.encode(request.getPassword()))
-                .contactInfo(request.getContactInfo())
                 .sportsPreference(request.getSportsPreference())
                 .description(request.getDescription())
                 .build();
@@ -136,9 +137,6 @@ public class UserService {
                 fileUtil.delete(user.getAvatar());
             }
             user.setAvatar(fileUtil.upload(user.getId(), request.getAvatar()));
-        }
-        if (request.getContactInfo() != null) {
-            user.setContactInfo(request.getContactInfo());
         }
         if (request.getSportsPreference() != null) {
             user.setSportsPreference(request.getSportsPreference());
