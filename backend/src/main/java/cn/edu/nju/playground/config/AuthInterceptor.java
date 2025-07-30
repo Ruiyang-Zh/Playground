@@ -23,6 +23,8 @@ public class AuthInterceptor implements HandlerInterceptor {
         "/api/auth/register", "POST",
         "/api/activities", "GET",
         "/api/activities/\\d+", "GET",
+        "/api/activities/\\d+/comments", "GET",
+        "/api/activities/\\d+/comments/**", "GET",
         "/api/user/\\d+/info", "GET",
         "/doc.html", "GET",
         "/swagger-ui/**", "GET",
