@@ -32,6 +32,9 @@ public class ActivityCreateRequest {
     @NotNull(message = "结束时间不能为空")
     private LocalDateTime endTime;
 
+    @NotNull(message = "报名截止时间不能为空")
+    private LocalDateTime registrationDeadline;
+
     @NotBlank(message = "省份不能为空")
     private String province;
 
@@ -56,12 +59,22 @@ public class ActivityCreateRequest {
     @DecimalMin(value = "0.00", message = "参与费用不能为负数")
     private BigDecimal fee;
 
-    @NotNull(message = "报名截止时间不能为空")
-    private LocalDateTime registrationDeadline;
-
     @NotBlank(message = "联系方式不能为空")
     @Length(max = 100, message = "联系方式长度不能超过100字符")
     private String contactInfo;
 
     private String requirements;
+
+    public LocalDateTime getStartTime() {
+        return startTime.withMinute(0).withSecond(0).withNano(0);
+    }
+
+    public LocalDateTime getEndTime() {
+        return endTime.withMinute(0).withSecond(0).withNano(0);
+    }
+
+    public LocalDateTime getRegistrationDeadline() {
+        return registrationDeadline.withMinute(0).withSecond(0).withNano(0);
+    }
+
 }

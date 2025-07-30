@@ -18,6 +18,7 @@ public class ActivityUpdateRequest {
     @Future(message = "开始时间必须在当前时间之后")
     private LocalDateTime startTime;
     private LocalDateTime endTime;
+    private LocalDateTime registrationDeadline;
     private String province;
     private String city;
     private String district;
@@ -26,8 +27,19 @@ public class ActivityUpdateRequest {
     private Integer minParticipants;
     @Min(value = 1, message = "最多参与人数不能小于1")
     private Integer maxParticipants;
-    private LocalDateTime registrationDeadline;
     @Length(max = 200, message = "联系方式长度不能超过200字符")
     private String contactInfo;
     private String requirements;
+
+    public LocalDateTime getStartTime() {
+        return startTime != null ? startTime.withMinute(0).withSecond(0).withNano(0) : null;
+    }
+
+    public LocalDateTime getEndTime() {
+        return endTime != null ? endTime.withMinute(0).withSecond(0).withNano(0) : null;
+    }
+
+    public LocalDateTime getRegistrationDeadline() {
+        return registrationDeadline != null ? registrationDeadline.withMinute(0).withSecond(0).withNano(0) : null;
+    }
 }

@@ -25,6 +25,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -169,6 +170,8 @@ public class ActivityService {
             throw PlaygroundException.operationNotAllowed("活动报名截止后不能修改");
         }
 
+        boolean needUpdateStatus = false;
+
         // 更新活动信息
         if (request.getTitle() != null) {
             if (request.getTitle().trim().isEmpty()) {
@@ -184,12 +187,14 @@ public class ActivityService {
                     request.getEndTime() != null ? request.getEndTime() : activity.getEndTime(),
                     request.getRegistrationDeadline() != null ? request.getRegistrationDeadline() : activity.getRegistrationDeadline());
             activity.setStartTime(request.getStartTime());
+            needUpdateStatus = true;
         }
         if (request.getEndTime() != null) {
             validateActivityTimes(activity.getStartTime(),
                     request.getEndTime(),
                     request.getRegistrationDeadline() != null ? request.getRegistrationDeadline() : activity.getRegistrationDeadline());
             activity.setEndTime(request.getEndTime());
+            needUpdateStatus = true;
         }
         if (request.getRegistrationDeadline() != null) {
             validateActivityTimes(
@@ -198,6 +203,7 @@ public class ActivityService {
                     request.getRegistrationDeadline()
             );
             activity.setRegistrationDeadline(request.getRegistrationDeadline());
+            needUpdateStatus = true;
         }
         if (request.getProvince() != null) {
             if (request.getProvince().trim().isEmpty()) {
@@ -228,6 +234,7 @@ public class ActivityService {
                 throw PlaygroundException.badRequest("最大参与人数不能小于当前参与人数");
             }
             activity.setMaxParticipants(request.getMaxParticipants());
+            needUpdateStatus = true;
         }
         if (request.getMinParticipants() != null) {
             if (request.getMinParticipants() < 1) {
@@ -261,6 +268,11 @@ public class ActivityService {
         }
 
         activityRepository.save(activity);
+
+        if (needUpdateStatus) {
+            updateActivityStatus(activity);
+        }
+
         log.info("活动更新成功，活动ID: {}", activityId);
     }
 
@@ -413,10 +425,8 @@ public class ActivityService {
         // 更新活动参与人数
         activity.setCurrentParticipants(activity.getCurrentParticipants() + 1);
 
-        // 检查是否满员
-        if (activity.getCurrentParticipants() >= activity.getMaxParticipants()) {
-            activity.setStatus(ActivityStatus.FULL);
-        }
+        // 更新活动状态
+        updateActivityStatus(activity);
 
         activityRepository.save(activity);
 
@@ -488,9 +498,7 @@ public class ActivityService {
         activity.setCurrentParticipants(activity.getCurrentParticipants() - 1);
 
         // 更新活动状态
-        if (activity.getStatus() == ActivityStatus.FULL) {
-            activity.setStatus(ActivityStatus.RECRUITING);
-        }
+        updateActivityStatus(activity);
 
         activityRepository.save(activity);
 
@@ -498,29 +506,44 @@ public class ActivityService {
     }
 
     /**
-     * 批量更新过期活动状态（定时任务调用）
+     * 批量更新过期活动状态（每整点执行）
      */
+    @Scheduled(cron = "0 0 * * * ?")
     @Transactional
-    public void updateExpiredActivitiesStatus() {
+    public void updateActivitiesStatus() {
         LocalDateTime now = LocalDateTime.now();
         List<Activity> activities = activityRepository.findActivitiesNeedingStatusUpdate(now);
 
         for (Activity activity : activities) {
-            updateExpiredStatus(activity);
+            updateActivityStatus(activity);
         }
     }
 
+    /**
+     * 更新活动状态
+     * @param activity
+     */
     @Transactional
-    public void updateExpiredStatus(Activity activity) {
-        ActivityStatus oldStatus = activity.getStatus();
+    public void updateActivityStatus(Activity activity) {
         LocalDateTime now = LocalDateTime.now();
 
+        // 1. 检查活动是否已结束
         if (activity.getEndTime().isBefore(now)) {
             activity.setStatus(ActivityStatus.COMPLETED);
-        } else if (activity.getStartTime().isBefore(now)) {
-            activity.setStatus(ActivityStatus.IN_PROGRESS);
-        } else if (activity.getRegistrationDeadline().isBefore(now)) {
-            // 检查是否达到最小人数
+            activityRepository.save(activity);
+            return;
+        }
+
+        // 2. 检查活动是否已开始
+        if (activity.getStartTime().isBefore(now)) {
+            activity.setStatus(ActivityStatus.IN_PROGRESS); // 如果有这个状态
+            activityRepository.save(activity);
+            return;
+        }
+
+        // 3. 活动未开始，检查报名状态
+        if (activity.getRegistrationDeadline().isBefore(now)) {
+            // 报名已截止
             if (activity.getCurrentParticipants() < activity.getMinParticipants()) {
                 // 人数不足，取消活动
                 log.info("活动因人数不足自动取消，活动ID: {}", activity.getId());
@@ -528,13 +551,16 @@ public class ActivityService {
             } else {
                 activity.setStatus(ActivityStatus.REGISTRATION_CLOSED);
             }
+        } else {
+            // 报名进行中
+            if (activity.getCurrentParticipants() >= activity.getMaxParticipants()) {
+                activity.setStatus(ActivityStatus.FULL);
+            } else {
+                activity.setStatus(ActivityStatus.RECRUITING);
+            }
         }
 
-        if (!oldStatus.equals(activity.getStatus())) {
-            activityRepository.save(activity);
-            log.info("活动状态更新，活动ID: {}, {} -> {}",
-                    activity.getId(), oldStatus, activity.getStatus());
-        }
+        activityRepository.save(activity);
     }
 
     /**
@@ -797,8 +823,8 @@ public class ActivityService {
         if (!activity.getCreator().getId().equals(user.getId())) {
             return false;
         }
-        // 报名截止前可以修改
-        return LocalDateTime.now().isBefore(activity.getRegistrationDeadline());
+        // 活动开始之前2小时可以修改
+        return LocalDateTime.now().isBefore(activity.getStartTime().minusHours(2));
     }
 
     private boolean canCancelActivity(Activity activity, User user) {
@@ -834,11 +860,11 @@ public class ActivityService {
             }
 
             // 开始时间范围
-            if (request.getStartDate() != null) {
-                predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("startTime"), request.getStartDate()));
+            if (request.getStartTime() != null) {
+                predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("startTime"), request.getStartTime()));
             }
-            if (request.getEndDate() != null) {
-                predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get("startTime"), request.getEndDate()));
+            if (request.getEndTime() != null) {
+                predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get("startTime"), request.getEndTime()));
             }
 
             // 费用范围
