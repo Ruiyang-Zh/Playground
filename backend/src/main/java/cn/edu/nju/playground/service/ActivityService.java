@@ -628,8 +628,9 @@ public class ActivityService {
             predicates.add(criteriaBuilder.equal(root.get("user").get("id"), userId));
 
             // 报名状态条件
-            predicates.add(criteriaBuilder.equal(root.get("status"), registrationStatus));
-
+            if (registrationStatus != null) {
+                predicates.add(criteriaBuilder.equal(root.get("status"), registrationStatus));
+            }
             // 活动筛选条件
             Join<Registration, Activity> activityJoin = root.join("activity");
             addActivityJoinFilters(predicates, activityJoin, criteriaBuilder, request);
@@ -651,6 +652,10 @@ public class ActivityService {
      * 根据参与类型获取对应的报名状态
      */
     private RegistrationStatus getRegistrationStatusByType(UserActivityType participationType) {
+        if (participationType == null) {
+            return null;
+        }
+
         switch (participationType) {
             case JOINED:
                 return RegistrationStatus.CONFIRMED;
