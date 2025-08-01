@@ -76,7 +76,7 @@ class UserModuleTest {
                         .param("sportsPreference", "BASKETBALL,RUNNING")
                         .param("description", "我是一个热爱运动的测试用户"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.code").value(0))
                 .andReturn();
 
         // 验证数据库中用户信息
@@ -139,7 +139,7 @@ class UserModuleTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(loginRequest)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data").exists())
                 .andReturn();
 
@@ -157,7 +157,7 @@ class UserModuleTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(loginRequest)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data").exists());
 
         System.out.println("✅ 邮箱登录测试通过");
@@ -199,7 +199,7 @@ class UserModuleTest {
         MvcResult result = mockMvc.perform(get("/api/users/info")
                         .header("Authorization", "Bearer " + authToken))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data.id").value(userId))
                 .andExpect(jsonPath("$.data.phone").value(TEST_PHONE))
                 .andExpect(jsonPath("$.data.email").value(TEST_EMAIL))
@@ -218,7 +218,7 @@ class UserModuleTest {
     void testGetUserPublicInfo() throws Exception {
         MvcResult result = mockMvc.perform(get("/api/users/" + userId + "/info").header("Authorization", "Bearer " + authToken))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data.id").value(userId))
                 .andExpect(jsonPath("$.data.username").value(TEST_USERNAME))
                 .andExpect(jsonPath("$.data.avatar").exists())
@@ -271,7 +271,7 @@ class UserModuleTest {
                             return request;
                         }))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data.username").value("updateduser"))
                 .andExpect(jsonPath("$.data.phone").value("13987654321"))
                 .andExpect(jsonPath("$.data.email").value("updated@example.com"))
@@ -341,7 +341,7 @@ class UserModuleTest {
                         .content(objectMapper.writeValueAsString(changeRequest))
                         .header("Authorization", "Bearer " + authToken))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(200));
+                .andExpect(jsonPath("$.code").value(0));
 
         // 验证密码已更改
         User user = userRepository.findById(userId).orElse(null);
@@ -365,7 +365,7 @@ class UserModuleTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(loginRequest)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data").exists())
                 .andReturn();
 

@@ -180,7 +180,7 @@ class ActivityModuleTest {
                         .param("requirements", "请自备运动装备")
                         .header("Authorization", "Bearer " + creatorToken))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data").exists())
                 .andReturn();
 
@@ -233,7 +233,7 @@ class ActivityModuleTest {
                         .param("contactInfo", "微信：creator123")
                         .header("Authorization", "Bearer " + creatorToken))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.code").value(0))
                 .andReturn();
 
         freeActivityId = objectMapper.readTree(result.getResponse().getContentAsString())
@@ -299,7 +299,7 @@ class ActivityModuleTest {
                         .param("sortBy", "createdAt")
                         .param("sortDir", "desc"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data.content").isArray())
                 .andExpect(jsonPath("$.data.totalElements").value(2))
                 .andReturn();
@@ -368,7 +368,7 @@ class ActivityModuleTest {
         MvcResult result = mockMvc.perform(get("/api/activities/" + activityId)
                         .header("Authorization", "Bearer " + participantToken))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data.id").value(activityId))
                 .andExpect(jsonPath("$.data.title").value("测试篮球活动"))
                 .andExpect(jsonPath("$.data.creator.username").value("creator"))
@@ -391,7 +391,7 @@ class ActivityModuleTest {
         mockMvc.perform(post("/api/activities/" + activityId + "/register")
                         .header("Authorization", "Bearer " + participantToken))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(200));
+                .andExpect(jsonPath("$.code").value(0));
 
         // 验证报名记录
         Optional<Registration> registrationOpt = registrationRepository
@@ -413,7 +413,7 @@ class ActivityModuleTest {
         mockMvc.perform(post("/api/activities/" + freeActivityId + "/register")
                         .header("Authorization", "Bearer " + participantToken))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(200));
+                .andExpect(jsonPath("$.code").value(0));
 
         // 验证报名记录（免费活动应该直接确认）
         Optional<Registration> registrationOpt = registrationRepository
@@ -452,7 +452,7 @@ class ActivityModuleTest {
         mockMvc.perform(delete("/api/activities/" + freeActivityId + "/register")
                         .header("Authorization", "Bearer " + participantToken))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(200));
+                .andExpect(jsonPath("$.code").value(0));
 
         // 验证报名记录状态更新
         Optional<Registration> registrationOpt = registrationRepository
@@ -491,7 +491,7 @@ class ActivityModuleTest {
                             return request;
                         }))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(200));
+                .andExpect(jsonPath("$.code").value(0));
 
         // 验证更新结果
         Optional<Activity> activityOpt = activityRepository.findById(activityId);
@@ -534,7 +534,7 @@ class ActivityModuleTest {
                         .param("size", "10")
                         .header("Authorization", "Bearer " + creatorToken))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data.totalElements").value(2));
 
         System.out.println("✅ 查询用户创建的活动测试通过");
@@ -550,7 +550,7 @@ class ActivityModuleTest {
                         .param("size", "10")
                         .header("Authorization", "Bearer " + participantToken))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data.totalElements").value(1)); // 只有付费活动确认了
 
         System.out.println("✅ 查询用户参与的活动测试通过");
@@ -588,7 +588,7 @@ class ActivityModuleTest {
         mockMvc.perform(delete("/api/activities/" + activityId)
                         .header("Authorization", "Bearer " + creatorToken))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(200));
+                .andExpect(jsonPath("$.code").value(0));
 
         // 验证活动状态更新
         Optional<Activity> activityOpt = activityRepository.findById(activityId);

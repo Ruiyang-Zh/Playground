@@ -174,7 +174,7 @@ class CommentModuleTest {
                         .content(objectMapper.writeValueAsString(request))
                         .header("Authorization", "Bearer " + user1Token))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data.content").value("这是第一条评论，活动看起来很不错！"))
                 .andExpect(jsonPath("$.data.user.username").value("user1"))
                 .andExpect(jsonPath("$.data.parentId").isEmpty())
@@ -210,7 +210,7 @@ class CommentModuleTest {
                         .content(objectMapper.writeValueAsString(request))
                         .header("Authorization", "Bearer " + user2Token))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data.content").value("我也觉得这个活动很棒！"))
                 .andExpect(jsonPath("$.data.user.username").value("user2"))
                 .andExpect(jsonPath("$.data.parentId").value(parentCommentId))
@@ -257,7 +257,7 @@ class CommentModuleTest {
                         .param("page", "0")
                         .param("size", "10"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data.content").isArray())
                 .andExpect(jsonPath("$.data.totalElements").value(5)) // 1个顶级评论 + 1个回复 + 3个新评论
                 .andReturn();
@@ -282,7 +282,7 @@ class CommentModuleTest {
     void testGetCommentCount() throws Exception {
         mockMvc.perform(get("/api/activities/" + activityId + "/comments/count"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data").value(5)); // 总共5条评论
 
         System.out.println("✅ 获取评论总数测试通过");
@@ -372,7 +372,7 @@ class CommentModuleTest {
         mockMvc.perform(delete("/api/activities/" + activityId + "/comments/" + parentCommentId)
                         .header("Authorization", "Bearer " + user1Token))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(200));
+                .andExpect(jsonPath("$.code").value(0));
 
         // 验证评论记录仍然存在但内容为空
         Optional<Comment> deletedCommentOpt = commentRepository.findById(parentCommentId);
@@ -395,7 +395,7 @@ class CommentModuleTest {
                         .param("page", "0")
                         .param("size", "10"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data.content").isArray())
                 .andReturn();
 
@@ -427,7 +427,7 @@ class CommentModuleTest {
         // 获取删除后的评论总数
         mockMvc.perform(get("/api/activities/" + activityId + "/comments/count"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data").value(4)); // 5条评论删除1条后剩4条
 
         System.out.println("✅ 删除后评论计数更新测试通过");
@@ -510,7 +510,7 @@ class CommentModuleTest {
                         .param("size", "10")
                         .param("sortByNewest", "true"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data.content").isArray())
                 .andReturn();
 
@@ -523,7 +523,7 @@ class CommentModuleTest {
                         .param("size", "10")
                         .param("sortByNewest", "false"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data.content").isArray())
                 .andReturn();
 
@@ -572,7 +572,7 @@ class CommentModuleTest {
                         .param("size", "2")
                         .param("sortByNewest", "true"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data.content").isArray())
                 .andExpect(jsonPath("$.data.size").value(2))
                 .andExpect(jsonPath("$.data.numberOfElements").value(2));
@@ -583,7 +583,7 @@ class CommentModuleTest {
                         .param("size", "2")
                         .param("sortByNewest", "true"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data.content").isArray())
                 .andExpect(jsonPath("$.data.number").value(1)); // 页码从0开始，第二页是1
 
@@ -602,14 +602,14 @@ class CommentModuleTest {
             mockMvc.perform(get("/api/activities/" + activityId + "/comments")
                             .param("sortByNewest", trueValue))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.code").value(200));
+                    .andExpect(jsonPath("$.code").value(0));
         }
 
         for (String falseValue : falseValues) {
             mockMvc.perform(get("/api/activities/" + activityId + "/comments")
                             .param("sortByNewest", falseValue))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.code").value(200));
+                    .andExpect(jsonPath("$.code").value(0));
         }
 
         System.out.println("✅ 排序参数测试通过");
