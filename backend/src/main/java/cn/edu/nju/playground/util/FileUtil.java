@@ -32,7 +32,10 @@ public class FileUtil {
         if (file.isEmpty()) {
             return null;
         }
-        String objectName = userId + "/" + UUID.randomUUID().toString() + '.' + file.getOriginalFilename().split("\\.")[1];
+
+        System.out.println(endpoint);
+
+        String objectName = "playground" + "/" + userId + "/" + UUID.randomUUID().toString() + '.' + file.getOriginalFilename().split("\\.")[1];
         OSS ossClient = new OSSClientBuilder().build(endpoint, accessKeyId, accessKeySecret);
         try {
             PutObjectRequest putObjectRequest = new PutObjectRequest(bucketName, objectName, file.getInputStream());
