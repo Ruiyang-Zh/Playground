@@ -15,9 +15,6 @@ import java.time.LocalDateTime;
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
 @Table(name = "registrations",
-        uniqueConstraints = {
-                @UniqueConstraint(name = "uk_activity_user", columnNames = {"activityId", "userId"})
-        },
         indexes = {
                 @Index(name = "idx_registration_activity_status", columnList = "activityId, status"),
                 @Index(name = "idx_registration_user", columnList = "userId")

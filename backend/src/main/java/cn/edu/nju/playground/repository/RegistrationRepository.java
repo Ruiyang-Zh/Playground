@@ -67,4 +67,6 @@ public interface RegistrationRepository extends JpaRepository<Registration, Long
     List<User> findParticipantsByActivityId(@Param("activityId") Long activityId);
 
     Page<Registration> findAll(Specification<Registration> spec, Pageable pageable);
+
+    boolean existsByActivity_IdAndUser_IdAndStatus(Long activityId, Long userId, RegistrationStatus status);
 }

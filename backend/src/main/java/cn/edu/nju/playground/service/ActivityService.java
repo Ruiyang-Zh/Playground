@@ -798,7 +798,8 @@ public class ActivityService {
         if (activity == null || user == null) {
             return false;
         }
-        return registrationRepository.existsByActivity_IdAndUser_Id(activity.getId(), user.getId());
+        return registrationRepository.existsByActivity_IdAndUser_IdAndStatus(activity.getId(), user.getId(), RegistrationStatus.PENDING)
+                || registrationRepository.existsByActivity_IdAndUser_IdAndStatus(activity.getId(), user.getId(), RegistrationStatus.CONFIRMED);
     }
 
     private boolean canUserRegister(Activity activity, User user) {
