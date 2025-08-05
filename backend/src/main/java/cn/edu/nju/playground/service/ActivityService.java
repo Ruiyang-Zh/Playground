@@ -861,10 +861,14 @@ public class ActivityService {
                 String likePattern = "%" + request.getKeyword().trim() + "%";
                 Predicate titlePredicate = criteriaBuilder.like(root.get("title"), likePattern);
                 Predicate descriptionPredicate = criteriaBuilder.like(root.get("description"), likePattern);
+                Predicate provincePredicate = criteriaBuilder.like(root.get("province"), likePattern);
+                Predicate cityPredicate = criteriaBuilder.like(root.get("city"), likePattern);
+                Predicate districtPredicate = criteriaBuilder.like(root.get("district"), likePattern);
                 Predicate venuePredicate = criteriaBuilder.like(root.get("venue"), likePattern);
                 Predicate creatorPredicate = criteriaBuilder.like(root.get("creator").get("username"), likePattern);
 
-                predicates.add(criteriaBuilder.or(titlePredicate, descriptionPredicate, venuePredicate, creatorPredicate));
+                predicates.add(criteriaBuilder.or(titlePredicate, descriptionPredicate,
+                        provincePredicate, cityPredicate, districtPredicate, venuePredicate, creatorPredicate));
             }
 
             // 活动类型
