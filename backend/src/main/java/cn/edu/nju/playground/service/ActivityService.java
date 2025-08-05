@@ -14,6 +14,7 @@ import cn.edu.nju.playground.util.FileUtil;
 import cn.edu.nju.playground.util.TokenUtil;
 import cn.edu.nju.playground.enums.ActivityStatus;
 import cn.edu.nju.playground.enums.RegistrationStatus;
+import jakarta.annotation.PostConstruct;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.Root;
@@ -46,6 +47,12 @@ public class ActivityService {
     private final TokenUtil tokenUtil;
     private final FileUtil fileUtil;
     private final ApplicationEventPublisher eventPublisher;
+
+    @PostConstruct
+    @Transactional
+    public void init() {
+        updateActivitiesStatus();
+    }
 
     /**
      * 创建活动
@@ -348,7 +355,7 @@ public class ActivityService {
         }
 
         // 检查是否已经报名（包括待处理状态）
-        if (registrationRepository.existsByActivity_IdAndUser_Id(activity.getId(), currentUser.getId())) {
+        if (isUserRegistered(activity, currentUser)) {
             throw PlaygroundException.operationNotAllowed("您已经报名了此活动或有待处理的报名");
         }
 

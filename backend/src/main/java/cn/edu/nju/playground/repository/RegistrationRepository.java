@@ -36,11 +36,6 @@ public interface RegistrationRepository extends JpaRepository<Registration, Long
     Page<Registration> findByUser_IdAndStatus(Long userId, RegistrationStatus status, Pageable pageable);
 
     /**
-     * 检查用户是否已报名活动
-     */
-    boolean existsByActivity_IdAndUser_Id(Long activityId, Long userId);
-
-    /**
      * 查询用户在某活动的报名记录
      */
     Optional<Registration> findByActivity_IdAndUser_Id(Long activityId, Long userId);
