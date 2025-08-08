@@ -581,13 +581,6 @@ public class ActivityService {
     public Page<ActivityBriefResponse> getUserActivities(Long userId, UserActivityQueryRequest request, int page, int size) {
         User currentUser = tokenUtil.getCurrentUser();
 
-        // 权限检查：创建的活动所有人可见，其他仅个人可见
-        if (request.getParticipationType() != UserActivityType.CREATED) {
-            if (currentUser == null || !currentUser.getId().equals(userId)) {
-                throw PlaygroundException.operationNotAllowed("只能查看自己的参与活动");
-            }
-        }
-
         // 根据参与类型选择不同的查询逻辑
         if (request.getParticipationType() == UserActivityType.CREATED) {
             return queryCreatedActivities(userId, request, page, size, currentUser);
