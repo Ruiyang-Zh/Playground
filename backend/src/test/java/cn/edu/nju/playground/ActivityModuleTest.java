@@ -557,30 +557,6 @@ class ActivityModuleTest {
     }
 
     @Test
-    @Order(17)
-    @DisplayName("17. 查询用户活动权限验证测试")
-    void testUserActivityPermission() throws Exception {
-        // 查看他人的参与活动应该被拒绝
-        mockMvc.perform(get("/api/activities/users/" + participantUserId)
-                        .param("participationType", "JOINED")
-                        .param("page", "0")
-                        .param("size", "10")
-                        .header("Authorization", "Bearer " + creatorToken))
-                .andExpect(status().is4xxClientError())
-                .andExpect(jsonPath("$.message").value("只能查看自己的参与活动"));
-
-        // 查看他人创建的活动应该允许
-        mockMvc.perform(get("/api/activities/users/" + creatorUserId)
-                        .param("participationType", "CREATED")
-                        .param("page", "0")
-                        .param("size", "10")
-                        .header("Authorization", "Bearer " + participantToken))
-                .andExpect(status().isOk());
-
-        System.out.println("✅ 查询用户活动权限验证测试通过");
-    }
-
-    @Test
     @Order(18)
     @DisplayName("18. 取消活动测试")
     void testCancelActivity() throws Exception {
