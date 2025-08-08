@@ -204,9 +204,9 @@ const fetchActivities = async (filterType: string = 'joined') => {
     loading.value = true;
     let data;
     if (filterType === 'joined') {
-      data = (await fetchUserActivities('JOINED'));
+      data = (await fetchUserActivities(currentUser.value.id, 'JOINED'));
     } else if (filterType === 'created') {
-      data = (await fetchUserActivities('CREATED'));
+      data = (await fetchUserActivities(currentUser.value.id, 'CREATED'));
     }
     if (data) {
       filteredActivities.value = data.content

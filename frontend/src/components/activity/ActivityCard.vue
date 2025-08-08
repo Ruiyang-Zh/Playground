@@ -231,7 +231,7 @@ const canUnregister = computed(() => {
   if (now > deadline) return false
 
   // 检查活动状态
-  const allowedStatuses = ['RECRUITING']
+  const allowedStatuses = ['RECRUITING', 'FULL']
   return allowedStatuses.includes(props.activity.status)
 })
 

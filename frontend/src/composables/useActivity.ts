@@ -26,8 +26,8 @@ export function useActivity() {
     return await activityStore.fetchActivities(finalParams)
   }
 
-  const fetchUserActivities = async (participationType? : ParticipationType) => {
-    return await activityStore.fetchUserActivities(participationType)
+  const fetchUserActivities = async (userId : number, participationType? : ParticipationType) => {
+    return await activityStore.fetchUserActivities(userId, participationType)
   }
 
   const fetchActivityDetail = async (activityId: number) => {

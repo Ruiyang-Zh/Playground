@@ -54,9 +54,11 @@ export const useActivityStore = defineStore('activity', () => {
     }
   }
 
-  const fetchUserActivities = async (participationType? : ParticipationType) => {
+  const fetchUserActivities = async (userId : number, participationType? : ParticipationType) => {
     try {
-      const response = await activityAPI.getMyActivities({
+      const response = await activityAPI.getUserActivities(
+        userId,
+        {
         participationType: participationType,
         page: 0,
         size: 10,

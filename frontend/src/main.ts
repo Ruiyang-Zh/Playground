@@ -66,10 +66,6 @@ const initApp = async () => {
     // 🔥 关键步骤：在应用启动前加载环境配置
     await envUtil.loadConfig();
 
-    // 现在您可以在 Vue 组件中使用 envService.getApiBaseUrl()
-    // 来获取动态配置的后端地址
-    console.log('🚀 当前 API 地址:', envUtil.getApiBaseUrl());
-
     // 挂载应用
     app.mount('#app')
 

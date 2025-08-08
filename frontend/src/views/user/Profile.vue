@@ -430,14 +430,14 @@ const { currentUser } = useAuth()
 const { fetchUserActivities, registerActivity, unregisterActivity } = useActivity()
 const { updateUserInfo, updatePassword, fetchUserInfo } = useUserInfo()
 
-// 新增：当前查看的用户信息
+// 当前查看的用户信息
 const viewingUser = ref<UserPublicInfoResponse | null>(null)
 const isOwnProfile = computed(() => {
   const userId = route.params.userId
   return !userId || (currentUser.value && userId == currentUser.value.id)
 })
 
-// 修改：显示的用户信息
+// 显示的用户信息
 const displayUser = computed(() => {
   return isOwnProfile.value ? currentUser.value : viewingUser.value
 })
@@ -527,7 +527,7 @@ const passwordRules = {
   ]
 }
 
-// 新增：获取用户信息的函数
+// 获取用户信息的函数
 const loadUserProfile = async () => {
   const userId = route.params.userId
   if (userId && userId != currentUser.value?.id) {
@@ -537,7 +537,6 @@ const loadUserProfile = async () => {
     } catch (error) {
       console.error('获取用户信息失败:', error)
       ElMessage.error('用户不存在或获取失败')
-      router.push('/profile')
     }
   }
 }
@@ -644,9 +643,7 @@ const fetchActivitiesData = async (type: 'joined' | 'created', reset = false) =>
     const participationType = type === 'joined' ? 'JOINED' : 'CREATED'
     const pagination = type === 'joined' ? joinedPagination.value : createdPagination.value
 
-    // 如果是查看他人资料，传递用户ID
-    const userId = isOwnProfile.value ? undefined : Number(route.params.userId)
-    const data = await fetchUserActivities(participationType, userId)
+    const data = await fetchUserActivities(Number(route.params.userId), participationType)
 
     if (data) {
       const activities = data.content || []
