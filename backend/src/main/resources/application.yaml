@@ -1,0 +1,33 @@
+spring:
+  application:
+    name: playground
+
+  datasource:
+    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${MYSQL_DB:Playground}?createDatabaseIfNotExist=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+    username: ${MYSQL_USER:root}
+    password: ${MYSQL_PASSWORD:123456}
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+
+  servlet:
+    multipart:
+      max-file-size: ${MULTIPART_MAX_FILE_SIZE:10MB}
+
+server:
+  port: ${SERVER_PORT:8080}
+
+aliyun:
+  oss:
+    endpoint: ${ALIYUN_OSS_ENDPOINT:oss-cn-beijing.aliyuncs.com}
+    accessKeyId: ${ALIYUN_OSS_ACCESS_KEY_ID:yourAccessKeyId}
+    accessKeySecret: ${ALIYUN_OSS_ACCESS_KEY_SECRET:yourAccessKeySecret}
+    bucketName: ${ALIYUN_OSS_BUCKET_NAME:yourBucketName}
+
+logging:
+  level:
+    root: ${LOGGING_LEVEL_ROOT:INFO}
