@@ -13,6 +13,7 @@ import '@/assets/styles/components.css'
 
 import App from './App.vue'
 import router from './router'
+import { envUtil } from '@/utils/env.ts'
 
 // 创建应用实例
 const app = createApp(App)
@@ -59,36 +60,43 @@ app.config.globalProperties.$ELEMENT = {
   zIndex: 3000,
 }
 
-// 挂载应用
-app.mount('#app')
+// 异步初始化应用
+const initApp = async () => {
+  try {
+    // 🔥 关键步骤：在应用启动前加载环境配置
+    await envUtil.loadConfig();
 
-// 服务工作线程注册（PWA支持）
-if ('serviceWorker' in navigator && import.meta.env.PROD) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js')
-      .then((registration) => {
-        console.log('SW registered: ', registration)
-      })
-      .catch((registrationError) => {
-        console.log('SW registration failed: ', registrationError)
-      })
-  })
+    // 现在您可以在 Vue 组件中使用 envService.getApiBaseUrl()
+    // 来获取动态配置的后端地址
+    console.log('🚀 当前 API 地址:', envUtil.getApiBaseUrl());
+
+    // 挂载应用
+    app.mount('#app')
+
+    // 应用初始化完成的事件处理
+    document.addEventListener('DOMContentLoaded', () => {
+      const loader = document.getElementById('initial-loader')
+      if (loader) {
+        loader.style.opacity = '0'
+        setTimeout(() => loader.remove(), 300)
+      }
+      document.body.classList.add('app-ready')
+    })
+
+  } catch (error) {
+    console.error('❌ 应用初始化失败:', error)
+    document.body.innerHTML = `
+      <div style="padding: 20px; text-align: center; color: red;">
+        <h2>应用启动失败</h2>
+        <p>请检查配置文件是否正确</p>
+        <pre>${error}</pre>
+      </div>
+    `
+  }
 }
 
-// 应用初始化完成的事件
-document.addEventListener('DOMContentLoaded', () => {
-  // 移除初始加载动画
-  const loader = document.getElementById('initial-loader')
-  if (loader) {
-    loader.style.opacity = '0'
-    setTimeout(() => {
-      loader.remove()
-    }, 300)
-  }
-
-  // 设置应用就绪状态
-  document.body.classList.add('app-ready')
-})
+// 启动应用
+initApp()
 
 // 键盘快捷键支持
 document.addEventListener('keydown', (event) => {

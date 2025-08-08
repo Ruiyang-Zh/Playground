@@ -1,6 +1,6 @@
 import { computed } from 'vue'
 import { useUserStore } from '@/stores/user'
-import type { UserPublicInfoResponse } from '@/types/user'
+import type { UserPublicInfoResponse, UserInfoResponse, PasswordChangeRequest } from '@/types/user'
 
 export function useUserInfo() {
   const userStore = useUserStore()
@@ -15,6 +15,15 @@ export function useUserInfo() {
     return userStore.getUserProfile(userId)
   }
 
+  // 更新用户信息
+  const updateUserInfo = async (data: FormData): Promise<UserInfoResponse> => {
+    return await userStore.updateUserInfo(data)
+  }
+
+  const updatePassword = async (data: PasswordChangeRequest): Promise<void> => {
+    return await userStore.updatePassword(data)
+  }
+
   const clearUserCache = () => {
     userStore.clearCache()
   }
@@ -23,6 +32,8 @@ export function useUserInfo() {
     loading,
     fetchUserInfo,
     getUserInfo,
+    updateUserInfo,
+    updatePassword,
     clearUserCache
   }
 }

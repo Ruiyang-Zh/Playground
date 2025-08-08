@@ -7,8 +7,7 @@ const router = createRouter({
     {
       path: '/',
       name: 'Home',
-      component: () => import('@/views/Home.vue'),
-      meta: { title: '首页' }
+      component: () => import('@/views/Home.vue')
     },
     {
       path: '/auth/login',
@@ -25,32 +24,32 @@ const router = createRouter({
     {
       path: '/activities/:id',
       name: 'ActivityDetail',
-      component: () => import('@/views/activity/Detail.vue'),
-      meta: { title: '活动详情' }
+      component: () => import('@/views/activity/ActivityDetail.vue'),
+      meta: { title: '活动详情', layout: 'activity' }
     },
     {
       path: '/activities/create',
-      name: 'CreateActivity',
-      component: () => import('@/views/activity/Create.vue'),
-      meta: { title: '创建活动', requiresAuth: true }
+      name: 'ActivityCreate',
+      component: () => import('@/views/activity/ActivityCreate.vue'),
+      meta: { title: '发布活动', requiresAuth: true }
     },
     {
-      path: '/profile',
+      path: '/activities/:id/edit',
+      name: 'ActivityEdit',
+      component: () => import('@/views/activity/ActivityEdit.vue'),
+      meta: { title: '编辑活动', requiresAuth: true }
+    },
+    {
+      path: '/users/:userId',
       name: 'Profile',
       component: () => import('@/views/user/Profile.vue'),
-      meta: { title: '个人中心', requiresAuth: true }
-    },
-    {
-      path: '/users/:id',
-      name: 'PublicProfile',
-      component: () => import('@/views/user/PublicProfile.vue'),
       meta: { title: '用户主页' }
     },
     {
       path: '/:pathMatch(.*)*',
       name: 'NotFound',
       component: () => import('@/views/error/404.vue'),
-      meta: { title: '页面未找到' }
+      meta: { title: 'Not Found' }
     }
   ]
 })

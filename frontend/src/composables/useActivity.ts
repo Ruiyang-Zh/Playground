@@ -2,7 +2,7 @@ import { ref, computed } from 'vue'
 import { useActivityStore } from '@/stores/activity'
 import { useAuth } from './useAuth'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import type { ActivitySearchParams } from '@/types/activity'
+import type { ActivitySearchParams, ParticipationType } from '@/types/activity'
 
 export function useActivity() {
   const activityStore = useActivityStore()
@@ -24,6 +24,14 @@ export function useActivity() {
     const finalParams = { ...searchParams.value, ...params }
     searchParams.value = finalParams
     return await activityStore.fetchActivities(finalParams)
+  }
+
+  const fetchUserActivities = async (participationType? : ParticipationType) => {
+    return await activityStore.fetchUserActivities(participationType)
+  }
+
+  const fetchActivityDetail = async (activityId: number) => {
+    return await activityStore.fetchActivityDetail(activityId)
   }
 
   const registerActivity = async (activityId: number) => {
@@ -81,6 +89,8 @@ export function useActivity() {
     pagination,
     searchParams,
     searchActivities,
+    fetchActivityDetail,
+    fetchUserActivities,
     registerActivity,
     unregisterActivity,
     cancelActivity

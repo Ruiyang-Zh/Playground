@@ -3,7 +3,7 @@
     <div class="header-container">
       <!-- Logo -->
       <div class="header-brand">
-        <router-link to="/" class="brand-link">
+        <router-link to="/" class="brand-link" @click="handleLogoClick">
           <span class="brand-text">PLAYGROUND</span>
         </router-link>
       </div>
@@ -46,28 +46,34 @@
         <template v-if="isLoggedIn">
           <!-- 我的活动按钮 -->
           <button
-            class="header-action-btn my-activities-btn"
+            class="header-action-btn activities-btn"
             @click="toggleMyActivities"
             type="button"
+            title="我的活动"
           >
-            我的活动
+            <el-icon class="action-icon"><Calendar /></el-icon>
           </button>
 
           <!-- 用户菜单 -->
-          <el-dropdown trigger="click" @command="handleUserAction">
-            <div class="user-menu-trigger">
+          <el-dropdown trigger="click" @command="handleUserAction" placement="bottom-end">
+            <button class="header-action-btn user-btn" type="button" title="个人中心">
               <UserAvatar
                 :user="currentUser"
                 :clickable="false"
                 :show-hover="false"
                 size="small"
               />
-            </div>
+            </button>
             <template #dropdown>
               <el-dropdown-menu>
-                <el-dropdown-item command="profile">个人中心</el-dropdown-item>
-                <el-dropdown-item command="create">创建活动</el-dropdown-item>
-                <el-dropdown-item divided command="logout">退出登录</el-dropdown-item>
+                <el-dropdown-item command="profile">
+                  <el-icon><User /></el-icon>
+                  个人中心
+                </el-dropdown-item>
+                <el-dropdown-item divided command="logout">
+                  <el-icon><SwitchButton /></el-icon>
+                  退出登录
+                </el-dropdown-item>
               </el-dropdown-menu>
             </template>
           </el-dropdown>
@@ -76,7 +82,7 @@
         <template v-else>
           <button
             class="header-action-btn join-btn"
-            @click="$router.push('/auth/register')"
+            @click="$router.push('/auth/login')"
             type="button"
           >
             JOIN US
@@ -94,9 +100,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, nextTick, watch} from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { Operation } from '@element-plus/icons-vue'
+import { Operation, Calendar, User, SwitchButton } from '@element-plus/icons-vue'
 import { useAuth } from '@/composables/useAuth'
 import UserAvatar from '@/components/common/UserAvatar.vue'
 import ActivitySearch from '@/components/activity/ActivitySearch.vue'
@@ -109,7 +115,6 @@ const { isLoggedIn, currentUser, logout } = useAuth()
 
 // 滚动位置状态
 const scrollY = ref(0)
-const showSearch = computed(() => route.path === '/')
 const showFilters = ref(false)
 const showMyActivitiesPanel = ref(false)
 
@@ -117,76 +122,91 @@ const showMyActivitiesPanel = ref(false)
 const searchKeyword = ref('')
 const filterParams = ref({})
 
-// 计算当前主题 - 简化逻辑
+// 计算属性
+const showSearch = computed(() => route.path === '/')
+
+// 判断是否为透明主题的页面
+const isTransparentPage = computed(() => {
+  // return route.path === '/' || route.path === '/profile'
+  return false
+})
+
+// 计算当前主题 - 修复：降低滚动阈值，任何滚动都会切换主题
 const currentTheme = computed(() => {
-  const isHomePage = route.path === '/'
-  if (!isHomePage) {
-    return 'dark'
-  }
-  // 滚动超过50px就切换为黑色主题
-  return scrollY.value > 50 ? 'dark' : 'transparent'
+  // if (!isTransparentPage.value) {
+  //   return 'dark'
+  // }
+  // // 修复：任何滚动（大于1px）都切换为dark主题
+  // return scrollY.value > 1 ? 'dark' : 'transparent'
+  return 'dark'
 })
 
 // 计算头部样式类
 const headerClass = computed(() => {
-  const isHomePage = route.path === '/'
-  if (!isHomePage) {
+  if (!isTransparentPage.value) {
     return 'theme-dark'
   }
-  // 滚动超过50px就切换为黑色主题
-  const isDark = scrollY.value > 50
-  console.log('ScrollY:', scrollY.value, 'Theme:', isDark ? 'dark' : 'transparent')
+  // 修复：任何滚动（大于1px）都切换为dark主题
+  const isDark = scrollY.value > 1
   return isDark ? 'theme-dark' : 'theme-transparent'
 })
 
-// 直接的滚动处理函数
+// 修复：优化滚动处理函数，使用requestAnimationFrame防抖
+let rafId: number | null = null
 const updateScrollY = () => {
-  const newScrollY = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0
-  scrollY.value = newScrollY
-  console.log('Scroll updated:', newScrollY)
+  if (rafId !== null) {
+    cancelAnimationFrame(rafId)
+  }
+
+  rafId = requestAnimationFrame(() => {
+    const newScrollY = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0
+
+    // 只有在透明页面才需要更新滚动位置
+    if (isTransparentPage.value) {
+      scrollY.value = Math.round(newScrollY)
+    }
+
+    rafId = null
+  })
 }
 
-// 创建滚动监听器
-const createScrollListener = () => {
-  console.log('Creating scroll listener...')
+// 修复：统一的滚动监听器管理
+const setupScrollListener = () => {
+  // 先清除现有监听器
+  cleanupScrollListener()
 
-  // 移除可能存在的旧监听器
-  window.removeEventListener('scroll', updateScrollY)
-  document.removeEventListener('scroll', updateScrollY)
-
-  // 添加新的监听器
-  window.addEventListener('scroll', updateScrollY, { passive: true })
-  document.addEventListener('scroll', updateScrollY, { passive: true })
-
-  // 立即检查滚动位置
-  updateScrollY()
-
-  console.log('Scroll listener created, initial scroll:', scrollY.value)
-}
-
-// 移除滚动监听器
-const removeScrollListener = () => {
-  console.log('Removing scroll listener...')
-  window.removeEventListener('scroll', updateScrollY)
-  document.removeEventListener('scroll', updateScrollY)
-}
-
-// 测试滚动功能
-const testScroll = () => {
-  console.log('Testing scroll detection...')
-
-  // 手动设置一些测试值
-  scrollY.value = 100
-  setTimeout(() => {
+  // 只在透明页面添加滚动监听
+  if (isTransparentPage.value) {
+    window.addEventListener('scroll', updateScrollY, { passive: true })
+    document.addEventListener('scroll', updateScrollY, { passive: true })
+    // 立即更新一次滚动位置
+    updateScrollY()
+  } else {
+    // 非透明页面重置滚动位置
     scrollY.value = 0
-  }, 1000)
+  }
+}
 
-  // 检查滚动元素
-  console.log('Window scrollY:', window.scrollY)
-  console.log('Document scrollTop:', document.documentElement.scrollTop)
-  console.log('Body scrollTop:', document.body.scrollTop)
-  console.log('Page height:', document.body.scrollHeight)
-  console.log('Viewport height:', window.innerHeight)
+const cleanupScrollListener = () => {
+  if (rafId !== null) {
+    cancelAnimationFrame(rafId)
+    rafId = null
+  }
+  window.removeEventListener('scroll', updateScrollY)
+  document.removeEventListener('scroll', updateScrollY)
+}
+
+// 事件处理函数
+const handleLogoClick = (event: Event) => {
+  if (route.path === '/') {
+    // 如果已经在首页，阻止默认跳转行为，直接滚动到顶部
+    event.preventDefault()
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    })
+  }
+  // 如果不在首页，让 router-link 正常工作
 }
 
 const toggleFilter = () => {
@@ -211,60 +231,57 @@ const handleFilter = (params: any) => {
   }))
 }
 
-const handleUserAction = (command: string) => {
+const handleUserAction = async (command: string) => {
   switch (command) {
     case 'profile':
-      router.push('/profile')
-      break
-    case 'create':
-      router.push('/activities/create')
+      router.push(`/users/${currentUser.value?.id}`)
       break
     case 'logout':
-      logout()
+      await logout()
       break
   }
 }
 
-onMounted(() => {
-  console.log('AppHeader mounted - setting up scroll listener')
-
-  // 等待DOM完全渲染
+watch(() => route.path, () => {
   nextTick(() => {
-    createScrollListener()
+    setupScrollListener()
+    console.log('Route changed to:', route.path, 'isTransparentPage:', isTransparentPage.value)
+  })
+}, { immediate: true })
 
-    // 延迟测试
-    setTimeout(() => {
-      testScroll()
-    }, 500)
+// 监听滚动位置变化（用于调试）
+watch(() => scrollY.value, (newVal) => {
+  console.log('Scroll Y changed:', newVal, 'Theme:', currentTheme.value)
+})
+
+// 监听透明页面状态变化
+watch(() => isTransparentPage.value, (newVal) => {
+  console.log('Transparent page changed:', newVal)
+  nextTick(() => {
+    setupScrollListener()
+  })
+})
+
+onMounted(() => {
+  nextTick(() => {
+    setupScrollListener()
+    console.log('Header mounted, current route:', route.path)
   })
 })
 
 onUnmounted(() => {
-  console.log('AppHeader unmounted')
-  removeScrollListener()
+  cleanupScrollListener()
 })
 
-// 监听路由变化
-watch(() => route.path, (newPath) => {
-  console.log('Route changed to:', newPath)
-  nextTick(() => {
-    createScrollListener()
-  })
-})
+// 监听登录状态变化
+watch(() => isLoggedIn.value, (newVal) => {
+  console.log('Login status changed:', newVal)
+}, { immediate: true })
 
-// 调试：监听scrollY变化
-watch(scrollY, (newVal, oldVal) => {
-  console.log('ScrollY reactive change:', oldVal, '->', newVal)
-})
-
-// 暴露测试函数到全局（仅开发环境）
-if (import.meta.env.DEV) {
-  (window as any).testHeaderScroll = () => {
-    console.log('Manual scroll test triggered')
-    updateScrollY()
-    testScroll()
-  }
-}
+// 监听用户信息变化
+watch(() => currentUser.value, (newUser) => {
+  console.log('Current user changed:', newUser)
+}, { immediate: true })
 </script>
 
 <style scoped>
@@ -279,7 +296,7 @@ if (import.meta.env.DEV) {
   width: 100%;
 }
 
-/* 透明主题 - 仅在封面全屏状态 */
+/* 透明主题 */
 .app-header.theme-transparent {
   background: transparent;
   color: var(--text-color-inverse);
@@ -288,7 +305,7 @@ if (import.meta.env.DEV) {
   box-shadow: none;
 }
 
-/* 黑色主题 - 滚动后或非主页 */
+/* 黑色主题 */
 .app-header.theme-dark {
   background: rgba(0, 0, 0, 0.95);
   color: var(--text-color-inverse);
@@ -383,22 +400,10 @@ if (import.meta.env.DEV) {
   border: 1px solid var(--border-color-light);
 }
 
-.filter-dropdown-enter-active,
-.filter-dropdown-leave-active {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  transform-origin: top center;
-}
-
-.filter-dropdown-enter-from,
-.filter-dropdown-leave-to {
-  opacity: 0;
-  transform: translateY(-10px) scaleY(0.95);
-}
-
 .header-actions {
   display: flex;
   align-items: center;
-  gap: var(--spacing-lg);
+  gap: var(--spacing-md);
   z-index: 10;
 }
 
@@ -409,7 +414,6 @@ if (import.meta.env.DEV) {
   color: inherit;
   font-weight: var(--font-weight-medium);
   font-size: var(--font-size-base);
-  padding: var(--spacing-sm) var(--spacing-lg);
   border-radius: var(--border-radius-md);
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -427,7 +431,38 @@ if (import.meta.env.DEV) {
   transform: translateY(0);
 }
 
-/* JOIN US 按钮特殊样式 */
+/* 我的活动按钮 */
+.activities-btn {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+}
+
+.action-icon {
+  font-size: var(--font-size-lg);
+}
+
+/* 用户头像按钮 */
+.user-btn {
+  width: 40px;
+  height: 40px;
+  padding: 1px; /* 很小的内边距 */
+  border-radius: var(--border-radius-full);
+  overflow: hidden; /* 确保头像不会超出边框 */
+}
+
+/* 强制头像填满整个按钮 */
+.user-btn :deep(.user-avatar-wrapper) {
+  width: 38px !important;
+  height: 38px !important;
+}
+
+.user-btn :deep(.avatar-container) {
+  width: 38px !important;
+  height: 38px !important;
+}
+
+/* JOIN US 按钮 */
 .join-btn {
   border-radius: var(--border-radius-full);
   padding: var(--spacing-sm) var(--spacing-xl);
@@ -437,17 +472,6 @@ if (import.meta.env.DEV) {
 .join-btn:hover {
   background: rgba(255, 255, 255, 0.15);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.user-menu-trigger {
-  cursor: pointer;
-  padding: var(--spacing-xs);
-  border-radius: var(--border-radius-md);
-  transition: all 0.3s ease;
-}
-
-.user-menu-trigger:hover {
-  background: rgba(255, 255, 255, 0.1);
 }
 
 /* 黑色主题下的按钮样式增强 */
@@ -467,6 +491,33 @@ if (import.meta.env.DEV) {
 .app-header.theme-dark .filter-toggle-btn:hover {
   border-color: rgba(255, 255, 255, 0.6);
   background: rgba(255, 255, 255, 0.12);
+}
+
+/* 下拉菜单样式 */
+:deep(.el-dropdown-menu) {
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--border-color-light);
+  padding: var(--spacing-sm);
+}
+
+:deep(.el-dropdown-menu__item) {
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--border-radius-md);
+  font-size: var(--font-size-sm);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+:deep(.el-dropdown-menu__item:hover) {
+  background: var(--bg-color-secondary);
+}
+
+:deep(.el-dropdown-menu__item.is-divided) {
+  border-top: 1px solid var(--border-color-light);
+  margin-top: var(--spacing-xs);
+  padding-top: var(--spacing-sm);
 }
 
 @media (max-width: 1024px) {
@@ -489,9 +540,18 @@ if (import.meta.env.DEV) {
     font-size: var(--font-size-lg);
   }
 
-  .header-action-btn {
-    padding: var(--spacing-sm) var(--spacing-md);
-    font-size: var(--font-size-sm);
+  .header-actions {
+    gap: var(--spacing-sm);
+  }
+
+  .activities-btn,
+  .user-btn {
+    width: 36px;
+    height: 36px;
+  }
+
+  .action-icon {
+    font-size: var(--font-size-base);
   }
 }
 
@@ -500,12 +560,9 @@ if (import.meta.env.DEV) {
     padding: 0 var(--spacing-md);
   }
 
-  .header-actions {
-    gap: var(--spacing-md);
-  }
-
   .join-btn {
     padding: var(--spacing-sm) var(--spacing-lg);
+    font-size: var(--font-size-sm);
   }
 }
 </style>

@@ -11,7 +11,6 @@
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import DefaultLayout from '@/layouts/DefaultLayout.vue'
-import ActivityLayout from '@/layouts/ActivityLayout.vue'
 import AuthLayout from '@/layouts/AuthLayout.vue'
 
 const route = useRoute()
@@ -23,11 +22,6 @@ const layoutComponent = computed(() => {
   // 认证页面使用 AuthLayout
   if (path.startsWith('/auth/')) {
     return AuthLayout
-  }
-
-  // 活动详情页使用 ActivityLayout
-  if (path.startsWith('/activities/') && path !== '/activities/create') {
-    return ActivityLayout
   }
 
   // 默认使用 DefaultLayout

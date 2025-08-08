@@ -4,7 +4,7 @@ import * as activityAPI from '@/api/activity'
 import type {
   ActivityBriefResponse,
   ActivityDetailResponse,
-  ActivitySearchParams
+  ActivitySearchParams, ParticipationType
 } from '@/types/activity'
 import type { PageResponse } from '@/types/api'
 
@@ -54,10 +54,10 @@ export const useActivityStore = defineStore('activity', () => {
     }
   }
 
-  const fetchRecentActivities = async () => {
+  const fetchUserActivities = async (participationType? : ParticipationType) => {
     try {
       const response = await activityAPI.getMyActivities({
-        participationType: 'JOINED',
+        participationType: participationType,
         page: 0,
         size: 10,
         sortBy: 'startTime',
@@ -66,7 +66,7 @@ export const useActivityStore = defineStore('activity', () => {
       recentActivities.value = response.data.content || []
       return response.data
     } catch (error) {
-      console.error('Failed to fetch recent activities:', error)
+      console.error('Failed to fetch user activities:', error)
       throw error
     }
   }
@@ -115,7 +115,7 @@ export const useActivityStore = defineStore('activity', () => {
     pagination: readonly(pagination),
     fetchActivities,
     fetchActivityDetail,
-    fetchRecentActivities,
+    fetchUserActivities,
     registerActivity,
     unregisterActivity,
     cancelActivity

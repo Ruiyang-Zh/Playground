@@ -1,10 +1,11 @@
 import axios from 'axios'
 import type { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios'
 import { ElMessage } from 'element-plus'
+import { envUtil} from '@/utils/env.ts'
 
 // 创建axios实例
 const request: AxiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
+  baseURL: envUtil.getApiBaseUrl(),
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json'
@@ -43,24 +44,27 @@ request.interceptors.response.use(
   (error) => {
     // HTTP错误处理
     if (error.response) {
-      const { status } = error.response
-      switch (status) {
-        case 401:
-          ElMessage.error('未授权，请重新登录')
-          localStorage.removeItem('token')
-          window.location.href = '/auth/login'
-          break
-        case 403:
-          ElMessage.error('拒绝访问')
-          break
-        case 404:
-          ElMessage.error('请求的资源不存在')
-          break
-        case 500:
-          ElMessage.error('服务器内部错误')
-          break
-        default:
-          ElMessage.error('网络错误')
+      if (error.response.message) {
+        ElMessage.error(error.response.data.message)
+      } else {
+        switch (error.response.status) {
+          case 401:
+            ElMessage.error('未授权，请重新登录')
+            localStorage.removeItem('token')
+            window.location.href = '/auth/login'
+            break
+          case 403:
+            ElMessage.error('拒绝访问')
+            break
+          case 404:
+            ElMessage.error('请求的资源不存在')
+            break
+          case 500:
+            ElMessage.error('服务器内部错误')
+            break
+          default:
+            ElMessage.error('网络错误')
+        }
       }
     } else {
       ElMessage.error('网络连接失败')

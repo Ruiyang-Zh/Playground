@@ -1,16 +1,35 @@
 import dayjs from 'dayjs'
 import type { SportsType, ActivityStatus } from '@/types/activity'
 
-export const formatDate = (date: string) => {
-  return dayjs(date).format('YYYY-MM-DD')
+export const formatDateTimeValue = (date: string) => {
+  return dayjs(date).format('YYYY-MM-DDTHH:mm:ss')
 }
 
-export const formatDateTime = (date: string) => {
+export const formatDisplayDateTime = (date: string) => {
   return dayjs(date).format('YYYY-MM-DD HH:mm')
 }
 
-export const formatTime = (date: string) => {
-  return dayjs(date).format('HH:mm')
+export const formatRelativeTime = (date: string) => {
+  const now = dayjs();
+  const target = dayjs(date);
+
+  const seconds = now.diff(target, 'seconds');
+  if (seconds < 60) {
+    return `${seconds}秒前`;
+  }
+
+  const minutes = now.diff(target, 'minutes');
+  if (minutes < 60) {
+    return `${minutes}分钟前`;
+  }
+
+  const hours = now.diff(target, 'hours');
+  if (hours < 24) {
+    return `${hours}小时前`;
+  }
+
+  const days = now.diff(target, 'days');
+  return `${days}天前`;
 }
 
 export const getActivityTypeText = (type: SportsType): string => {

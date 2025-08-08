@@ -25,19 +25,6 @@
         </el-input>
       </el-form-item>
 
-      <el-form-item prop="email">
-        <el-input
-          v-model="registerForm.email"
-          placeholder="邮箱地址"
-          size="large"
-          class="form-input"
-        >
-          <template #prefix>
-            <el-icon class="input-icon"><Message /></el-icon>
-          </template>
-        </el-input>
-      </el-form-item>
-
       <el-form-item prop="phone">
         <el-input
           v-model="registerForm.phone"
@@ -47,6 +34,19 @@
         >
           <template #prefix>
             <el-icon class="input-icon"><Iphone /></el-icon>
+          </template>
+        </el-input>
+      </el-form-item>
+
+      <el-form-item prop="email">
+        <el-input
+          v-model="registerForm.email"
+          placeholder="邮箱地址"
+          size="large"
+          class="form-input"
+        >
+          <template #prefix>
+            <el-icon class="input-icon"><Message /></el-icon>
           </template>
         </el-input>
       </el-form-item>
@@ -82,31 +82,53 @@
         </el-input>
       </el-form-item>
 
-      <!-- 运动偏好 -->
-      <div class="sports-section">
-        <label class="section-label">选择感兴趣的运动</label>
-        <div class="sports-grid">
-          <el-checkbox
-            v-for="sport in SPORTS_OPTIONS.slice(0, 6)"
-            :key="sport.value"
-            :value="sport.value"
-            v-model="registerForm.sportsPreference"
-            class="sport-item"
-          >
-            {{ sport.label }}
-          </el-checkbox>
+      <!-- 头像上传 -->
+      <div class="avatar-section">
+        <label class="section-label">设置头像（可选）</label>
+        <el-upload
+          v-model:file-list="avatarFileList"
+          :auto-upload="false"
+          :before-upload="handleAvatarBeforeUpload"
+          :on-remove="handleAvatarRemove"
+          list-type="picture-card"
+          accept="image/*"
+          :limit="1"
+          class="avatar-uploader"
+        >
+          <el-icon class="upload-icon"><Plus /></el-icon>
+          <div class="upload-text">选择头像</div>
+        </el-upload>
+        <div class="upload-tip">
+          <el-icon><InfoFilled /></el-icon>
+          支持 JPG、PNG 格式，大小不超过 2MB
         </div>
       </div>
 
-      <!-- 服务条款 -->
-      <el-form-item prop="agreeTerms" class="terms-item">
-        <el-checkbox v-model="registerForm.agreeTerms" class="terms-checkbox">
-          我同意
-          <el-button type="text" class="terms-link">服务条款</el-button>
-          和
-          <el-button type="text" class="terms-link">隐私政策</el-button>
-        </el-checkbox>
-      </el-form-item>
+      <!-- 运动偏好 -->
+      <div class="sports-section">
+        <label class="section-label">选择感兴趣的运动</label>
+
+        <!-- 选择触发器 -->
+        <div class="sports-selector" @click="showSportsDialog = true">
+          <div class="selected-sports" v-if="registerForm.sportsPreference.length > 0">
+            <el-tag
+              v-for="sport in selectedSportsLabels"
+              :key="sport.value"
+              closable
+              @close="removeSport(sport.value)"
+              class="sport-tag"
+            >
+              {{ sport.label }}
+            </el-tag>
+          </div>
+          <div class="placeholder" v-else>
+            点击选择感兴趣的运动项目
+          </div>
+          <el-icon class="selector-icon">
+            <ArrowDown />
+          </el-icon>
+        </div>
+      </div>
 
       <el-button
         type="primary"
@@ -128,13 +150,44 @@
       </p>
     </div>
   </div>
+
+  <!-- 运动选择弹窗 -->
+  <el-dialog
+    v-model="showSportsDialog"
+    title="选择感兴趣的运动"
+    width="400px"
+    :before-close="handleSportsDialogClose"
+  >
+    <div class="sports-dialog-content">
+      <div class="sports-options">
+        <el-checkbox
+          v-for="sport in SPORTS_OPTIONS"
+          :key="sport.value"
+          :value="sport.value"
+          v-model="tempSportsPreference"
+          class="sport-option"
+        >
+          {{ sport.label }}
+        </el-checkbox>
+      </div>
+    </div>
+
+    <template #footer>
+      <div class="dialog-footer">
+        <el-button @click="cancelSportsSelection">取消</el-button>
+        <el-button type="primary" @click="confirmSportsSelection">
+          确认选择 ({{ tempSportsPreference.length }})
+        </el-button>
+      </div>
+    </template>
+  </el-dialog>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { ref, reactive, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage, type FormInstance } from 'element-plus'
-import { User, Message, Iphone, Lock } from '@element-plus/icons-vue'
+import { ElMessage, type FormInstance, type UploadProps, type UploadUserFile } from 'element-plus'
+import { User, Message, Iphone, Lock, Plus, InfoFilled, ArrowDown } from '@element-plus/icons-vue'
 import { SPORTS_OPTIONS } from '@/utils/constants'
 import * as authAPI from '@/api/auth'
 import type { SportsType } from '@/types/user'
@@ -143,6 +196,9 @@ const router = useRouter()
 
 const registerFormRef = ref<FormInstance>()
 const loading = ref(false)
+const avatarFileList = ref<UploadUserFile[]>([])
+const showSportsDialog = ref<boolean>(false)
+const tempSportsPreference = ref([])
 
 interface RegisterForm {
   username: string
@@ -174,7 +230,7 @@ const registerRules = {
     { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号格式', trigger: 'blur' }
   ],
   email: [
-    { required: true, message: '请输入邮箱', trigger: 'blur' },
+    { required: false, message: '请输入邮箱', trigger: 'blur' },
     { type: 'email', message: '请输入正确的邮箱格式', trigger: 'blur' }
   ],
   password: [
@@ -208,6 +264,32 @@ const registerRules = {
   ]
 }
 
+const selectedSportsLabels = computed(() => {
+  return registerForm.sportsPreference.map(value =>
+    SPORTS_OPTIONS.find(sport => sport.value === value)
+  ).filter(Boolean)
+})
+
+// 头像上传相关
+const handleAvatarBeforeUpload: UploadProps['beforeUpload'] = (file) => {
+  const isImage = file.type.startsWith('image/')
+  const isLt2M = file.size / 1024 / 1024 < 2
+
+  if (!isImage) {
+    ElMessage.error('头像只能是图片格式!')
+    return false
+  }
+  if (!isLt2M) {
+    ElMessage.error('头像大小不能超过 2MB!')
+    return false
+  }
+  return true
+}
+
+const handleAvatarRemove = (file: UploadUserFile) => {
+  console.log('移除头像:', file.name)
+}
+
 const handleRegister = async () => {
   if (!registerFormRef.value) return
 
@@ -217,15 +299,22 @@ const handleRegister = async () => {
 
     loading.value = true
 
+    // 构建FormData
     const formData = new FormData()
     formData.append('username', registerForm.username)
     formData.append('phone', registerForm.phone)
     formData.append('email', registerForm.email)
     formData.append('password', registerForm.password)
 
+    // 添加运动偏好
     registerForm.sportsPreference.forEach(sport => {
       formData.append('sportsPreference', sport)
     })
+
+    // 添加头像文件（如果有）
+    if (avatarFileList.value.length > 0 && avatarFileList.value[0].raw) {
+      formData.append('avatar', avatarFileList.value[0].raw)
+    }
 
     await authAPI.register(formData)
 
@@ -239,6 +328,37 @@ const handleRegister = async () => {
     loading.value = false
   }
 }
+
+const removeSport = (sportValue: SportsType) => {
+  const index = registerForm.sportsPreference.indexOf(sportValue)
+  if (index > -1) {
+    registerForm.sportsPreference.splice(index, 1)
+  }
+}
+
+const handleSportsDialogClose = () => {
+  // 恢复到原来的选择状态
+  tempSportsPreference.value = [...registerForm.sportsPreference]
+  showSportsDialog.value = false
+}
+
+const cancelSportsSelection = () => {
+  tempSportsPreference.value = [...registerForm.sportsPreference]
+  showSportsDialog.value = false
+}
+
+const confirmSportsSelection = () => {
+  registerForm.sportsPreference = [...tempSportsPreference.value]
+  showSportsDialog.value = false
+}
+
+// 监听弹窗打开，初始化临时选择
+watch(showSportsDialog, (newVal) => {
+  if (newVal) {
+    tempSportsPreference.value = [...registerForm.sportsPreference]
+  }
+})
+
 </script>
 
 <style scoped>
@@ -304,7 +424,7 @@ const handleRegister = async () => {
   margin-left: var(--spacing-sm);
 }
 
-.sports-section {
+.avatar-section {
   margin: var(--spacing-xl) 0;
 }
 
@@ -314,6 +434,46 @@ const handleRegister = async () => {
   font-weight: var(--font-weight-medium);
   color: var(--text-color-primary);
   margin-bottom: var(--spacing-md);
+}
+
+.avatar-uploader :deep(.el-upload--picture-card) {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  border: 2px dashed var(--border-color);
+  transition: all 0.3s ease;
+}
+
+.avatar-uploader :deep(.el-upload--picture-card):hover {
+  border-color: var(--primary-color);
+}
+
+.avatar-uploader :deep(.el-upload-list__item) {
+  border-radius: 50%;
+}
+
+.upload-icon {
+  font-size: var(--font-size-xl);
+  color: var(--text-color-tertiary);
+  margin-bottom: var(--spacing-xs);
+}
+
+.upload-text {
+  font-size: var(--font-size-xs);
+  color: var(--text-color-tertiary);
+}
+
+.upload-tip {
+  margin-top: var(--spacing-sm);
+  font-size: var(--font-size-xs);
+  color: var(--text-color-tertiary);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.sports-section {
+  margin: var(--spacing-xl) 0;
 }
 
 .sports-grid {
@@ -393,5 +553,114 @@ const handleRegister = async () => {
 .register-card::-webkit-scrollbar-thumb {
   background: var(--border-color);
   border-radius: 2px;
+}
+
+.sports-selector {
+  min-height: 48px;
+  border: 2px solid var(--border-color);
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-sm) var(--spacing-md);
+  cursor: pointer;
+  transition: var(--transition-base);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg-color-primary);
+}
+
+.sports-selector:hover {
+  border-color: var(--primary-color);
+}
+
+.selected-sports {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
+  flex: 1;
+}
+
+.sport-tag {
+  margin: 2px;
+}
+
+.placeholder {
+  color: var(--text-color-tertiary);
+  font-size: var(--font-size-base);
+}
+
+.selector-icon {
+  color: var(--text-color-secondary);
+  margin-left: var(--spacing-sm);
+  transition: transform 0.3s ease;
+}
+
+.sports-dialog-content {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.sports-options {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--spacing-sm);
+}
+
+.sport-option {
+  font-size: var(--font-size-sm);
+  padding: var(--spacing-xs) 0;
+}
+
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--spacing-sm);
+}
+
+/* 响应式设计 */
+@media (max-width: 480px) {
+  .sports-options {
+    grid-template-columns: 1fr;
+  }
+
+  .selected-sports {
+    flex-direction: column;
+    gap: var(--spacing-xs);
+  }
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .register-card {
+    padding: var(--spacing-lg);
+  }
+
+  .sports-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .avatar-uploader :deep(.el-upload--picture-card) {
+    width: 80px;
+    height: 80px;
+  }
+}
+
+@media (max-width: 480px) {
+  .register-card {
+    padding: var(--spacing-md);
+    max-height: 100vh;
+  }
+
+  .card-title {
+    font-size: var(--font-size-xl);
+  }
+
+  .form-input :deep(.el-input__wrapper) {
+    height: 44px;
+  }
+
+  .submit-btn {
+    height: 46px;
+    font-size: var(--font-size-base);
+  }
 }
 </style>

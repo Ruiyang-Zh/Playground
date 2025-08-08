@@ -9,11 +9,8 @@
       <div class="hero-content">
         <div class="hero-text">
           <h1 class="hero-title">
-            PLAYGROUND FITNESS WAS CENTRAL IN<br>
-            HELPING ME GAIN THE STAMINA FOR MY<br>
-            RECENT MARATHON.
+            Find your sports squad<br>every game is a chance to<br>connect and play.
           </h1>
-          <p class="hero-author">-Alejandro Jimenez</p>
         </div>
 
         <!-- 下拉提示 -->
@@ -32,8 +29,8 @@
           <p class="section-subtitle">找到适合你的运动活动</p>
         </div>
 
-        <!-- 移动端搜索 -->
-        <div class="mobile-search" v-if="!showSearch">
+        <!-- 移动端搜索和筛选 -->
+        <div class="mobile-controls" v-if="!showSearch">
           <ActivitySearch
             v-model="searchKeyword"
             @search="handleSearch"
@@ -64,10 +61,10 @@
 
         <!-- 活动列表 -->
         <div class="activities-container">
-          <div v-if="loading && activities.length === 0" class="loading-state">
+          <div v-if="loading && filteredActivities.length === 0" class="loading-state">
             <div class="loading-grid">
               <el-skeleton
-                v-for="i in 6"
+                v-for="i in 12"
                 :key="i"
                 animated
                 class="activity-skeleton"
@@ -84,7 +81,7 @@
             </div>
           </div>
 
-          <div v-else-if="activities.length === 0" class="empty-state">
+          <div v-else-if="filteredActivities.length === 0" class="empty-state">
             <el-icon class="empty-icon"><Calendar /></el-icon>
             <h3 class="empty-title">暂无活动</h3>
             <p class="empty-text">还没有找到合适的活动</p>
@@ -100,17 +97,18 @@
 
           <div v-else class="activities-grid">
             <ActivityCard
-              v-for="activity in activities"
+              v-for="activity in filteredActivities"
               :key="activity.id"
               :activity="activity"
               @register="handleRegister"
+              @unregister="handleUnregister"
               @view-detail="handleViewDetail"
               class="activity-card-item"
             />
           </div>
 
           <!-- 加载更多 -->
-          <div v-if="hasMore && activities.length > 0" class="load-more-section">
+          <div v-if="hasMore && filteredActivities.length > 0" class="load-more-section">
             <el-button
               @click="loadMore"
               :loading="loading"
@@ -122,7 +120,7 @@
           </div>
 
           <!-- 加载中状态 -->
-          <div v-if="loading && activities.length > 0" class="loading-more">
+          <div v-if="loading && filteredActivities.length > 0" class="loading-more">
             <el-icon class="is-loading"><Loading /></el-icon>
             <span>加载更多活动中...</span>
           </div>
@@ -134,14 +132,13 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed, nextTick, onUnmounted } from 'vue'
-import { useRoute } from 'vue-router'
-import { ArrowDown, Calendar, Loading } from '@element-plus/icons-vue'
+import { useRoute, useRouter } from 'vue-router'
+import { ArrowDown, ArrowUp, Calendar, Loading } from '@element-plus/icons-vue'
 import { useAuth } from '@/composables/useAuth'
 import { useActivity } from '@/composables/useActivity'
 import ActivityCard from '@/components/activity/ActivityCard.vue'
 import ActivitySearch from '@/components/activity/ActivitySearch.vue'
 import ActivityFilter from '@/components/activity/ActivityFilter.vue'
-import type { ActivitySearchParams } from '@/types/activity'
 
 const route = useRoute()
 const { isLoggedIn } = useAuth()
@@ -150,14 +147,21 @@ const {
   loading,
   pagination,
   searchActivities,
+  unregisterActivity,
   registerActivity
 } = useActivity()
 
+const filteredActivities = computed(() =>
+  activities.value.filter(
+    (activity) => activity.status !== 'COMPLETED' && activity.status !== 'CANCELLED'
+  )
+)
 const heroSection = ref<HTMLElement>()
 const activitiesSection = ref<HTMLElement>()
 const searchKeyword = ref('')
 const filterParams = ref({})
 const showMobileFilters = ref(false)
+const router = useRouter()
 
 const showSearch = computed(() => route.path === '/' && window.innerWidth > 768)
 
@@ -173,8 +177,21 @@ const handleRegister = async (activityId: number) => {
   })
 }
 
+const handleUnregister = async (activityId: number) => {
+  try {
+    await unregisterActivity(activityId)
+    // 重新加载当前标签页的数据
+    await searchActivities({
+      page: 0,
+      size: pagination.value.size
+    })
+  } catch (error) {
+    console.error('取消报名失败:', error)
+  }
+}
+
 const handleViewDetail = (activityId: number) => {
-  window.open(`/activities/${activityId}`, '_blank')
+  router.push(`/activities/${activityId}`)
 }
 
 const handleSearch = async (keyword: string) => {
@@ -235,8 +252,8 @@ onMounted(() => {
   searchActivities({
     page: 0,
     size: 12,
-    sortBy: 'startTime',
-    sortDir: 'asc'
+    sortBy: 'createAt',
+    sortDir: 'desc'
   })
 
   // 监听头部搜索事件
@@ -278,9 +295,7 @@ onUnmounted(() => {
 .hero-gradient {
   width: 100%;
   height: 100%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  /* 后续这里会替换为背景图片 */
-  /* background-image: url('背景图片URL'); */
+  background: var(--gradient-user-bg);
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -390,7 +405,7 @@ onUnmounted(() => {
   margin: 0;
 }
 
-.mobile-search {
+.mobile-controls {
   display: none;
   gap: var(--spacing-md);
   margin-bottom: var(--spacing-lg);
@@ -512,13 +527,6 @@ onUnmounted(() => {
   font-size: var(--font-size-base);
 }
 
-/* 响应式设计 */
-@media (max-width: 1200px) {
-  .section-container {
-    padding: 0 var(--spacing-lg);
-  }
-}
-
 @media (max-width: 768px) {
   .hero-title {
     font-size: clamp(1.5rem, 6vw, 2.5rem);
@@ -530,7 +538,7 @@ onUnmounted(() => {
     font-size: var(--font-size-base);
   }
 
-  .mobile-search {
+  .mobile-controls {
     display: flex;
   }
 
